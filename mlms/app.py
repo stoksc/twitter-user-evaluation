@@ -3,7 +3,8 @@ import json
 from flask import jsonify, request, make_response
 
 from TwitterFlask import TwitterFlask
-from TweetAnalytics import get_tweets_with_hashtag, most_popular
+from TweetAnalytics import get_tweets_with_hashtag
+from TweetAnalytics import most_x, popularity, controversiality
 
 keys = {
     'consumer_key' : '',
@@ -34,8 +35,8 @@ def get_hashtag_analytics():
 
         # TODO: implement each function called
         response = {
-            'most_popular_tweet' : most_popular(tweets),
-            # 'most_controversial_tweet' : most_controversial(tweets),
+            'most_popular_tweet' : most_x(tweets, x=popularity),
+            'most_controversial_tweet' : most_x(tweets, x=controversiality),
             # 'sentiment' : average_sentiment(tweets),
             # 'related_hashtag' : most_related(tweets, hashtag),
             # 'related_user' : most_related(tweets)
