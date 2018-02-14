@@ -1,9 +1,9 @@
 import json
 
-from flask import Flask, jsonify, request, make_response
-import tweepy
+from flask import jsonify, request, make_response
 
-from TwitterFlask import TwitterFlask, get_hashtag_data
+from TwitterFlask import TwitterFlask
+from TweetAnalytics import get_tweets_with_hashtag, most_popular
 
 keys = {
     'consumer_key' : '',
@@ -25,7 +25,7 @@ def get_hashtag_analytics():
     if 'hashtag' in request.args:
         hashtag = request.args['hashtag']
 
-        hashtag_data = get_hashtag_data(
+        tweets = get_tweets_with_hashtag(
             hashtag,
             app.api,
             app.count,
@@ -33,15 +33,13 @@ def get_hashtag_analytics():
         )
 
         # TODO: implement each function called
-        # response = {
-        #     'most_popular_tweet' : most_popular(tweets),
-        #     'most_controversial_tweet' : most_controversial(tweets),
-        #     'sentiment' : average_sentiment(tweets),
-        #     'related_hashtag' : most_related(tweets, hashtag),
-        #     'related_user' : most_related(tweets)
-        # }
-
-        response = hashtag_data
+        response = {
+            'most_popular_tweet' : most_popular(tweets),
+            # 'most_controversial_tweet' : most_controversial(tweets),
+            # 'sentiment' : average_sentiment(tweets),
+            # 'related_hashtag' : most_related(tweets, hashtag),
+            # 'related_user' : most_related(tweets)
+        }
 
     return make_response(jsonify(response), 201)
 
