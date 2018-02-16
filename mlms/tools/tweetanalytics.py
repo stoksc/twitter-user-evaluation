@@ -1,3 +1,16 @@
+def analyze_tweets(tweets):
+    '''
+    '''
+    # TODO: implement each function called
+    return {
+            'most_popular_tweet' : most_x(tweets, x=popularity),
+            'most_controversial_tweet' : most_x(tweets, x=controversiality),
+            # 'sentiment' : average_sentiment(tweets),
+            # 'related_hashtag' : most_related(tweets, hashtag),
+            # 'related_user' : most_related(tweets)
+    }
+
+
 def most_x(tweets, x=None):
     ''' Function takes an array of dictionaries, each dictionary representing a
     tweet and some information about it. Returns the text of the most popular
@@ -56,16 +69,3 @@ def controversiality(tweet):
     '''
 
     return tweet['replies'] - tweet['favorites'] - tweet['retweets']
-
-
-def analyze_tweets(tweets):
-    '''
-    '''
-        # TODO: implement each function called
-    return {
-            'most_popular_tweet' : most_x(tweets, x=popularity),
-            'most_controversial_tweet' : most_x(tweets, x=controversiality),
-            # 'sentiment' : average_sentiment(tweets),
-            # 'related_hashtag' : most_related(tweets, hashtag),
-            # 'related_user' : most_related(tweets)
-    }

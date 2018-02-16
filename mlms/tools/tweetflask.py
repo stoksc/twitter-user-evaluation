@@ -1,7 +1,7 @@
 from flask import Flask
 import tweepy
 
-class TwitterFlask(Flask):
+class TweetFlask(Flask):
     def __init__(self, name, keys):
         super().__init__(name)
 
