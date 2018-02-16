@@ -3,8 +3,10 @@ import json
 from flask import jsonify, request, make_response
 
 from TwitterFlask import TwitterFlask
-from TweetAnalytics import get_tweets_with_hashtag
-from TweetAnalytics import most_x, popularity, controversiality
+from TweetGrabber import get_tweets_with_hashtag
+from TweetGrabber import get_tweets_from_user
+from TweetAnalytics import analyze_tweets
+
 
 keys = {
     'consumer_key' : '',
@@ -13,7 +15,8 @@ keys = {
     'access_token_secret' : '',
 }
 
-app = TwitterFlask(__name__, keys)
+app = TwitterFlask(__name__, apikey.keys)
+
 
 @app.route('/', methods=['GET'])
 def get_hashtag_analytics():
@@ -29,20 +32,21 @@ def get_hashtag_analytics():
         tweets = get_tweets_with_hashtag(
             hashtag,
             app.api,
-            app.count,
-            app.lang
         )
 
-        # TODO: implement each function called
-        response = {
-            'most_popular_tweet' : most_x(tweets, x=popularity),
-            'most_controversial_tweet' : most_x(tweets, x=controversiality),
-            # 'sentiment' : average_sentiment(tweets),
-            # 'related_hashtag' : most_related(tweets, hashtag),
-            # 'related_user' : most_related(tweets)
-        }
+        response = analyze_tweets(tweets)
+        return make_response(jsonify(response), 201)
 
-    return make_response(jsonify(response), 201)
+    if 'user' in request.args:
+        user = request.args['user']
+
+        tweets = get_tweets_from_user(
+            user,
+            app.api,
+        )
+
+        respone = analyze_tweets(tweets)
+        return make_response(jsonify(response), 201)
 
 
 @app.errorhandler(404)
