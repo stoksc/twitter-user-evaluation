@@ -1,21 +1,28 @@
-import json
+''' This module uses flask to implement a microservices that exposes a REST API for the
+project's PHP backend to consume. It takes a couple queries:
+    GET /?hashtag=hashtag
+        sends back a json object with analysis of the hashtag
+    GET /?user=user
+        sends back a json object with analysis of the user
+'''
 
-from flask import jsonify, request, make_response
+from flask import Flask, jsonify, make_response, request
+import tweepy
 
-from tools.tweetflask import TweetFlask
 from tools.tweetgrabber import get_tweets_with_hashtag
 from tools.tweetgrabber import get_tweets_from_user
 from tools.tweetanalytics import analyze_tweets
 
 
-keys = {
-    'consumer_key' : '',
-    'consumer_secret' : '',
-    'access_token' : '',
-    'access_token_secret' : '',
-}
+app = Flask(__name__)
 
-app = TweetFlask(__name__, keys)
+auth = tweepy.OAuthHandler(
+    '',
+    '')
+auth.set_access_token(
+    '',
+    '')
+api = tweepy.API(auth, wait_on_rate_limit=True)
 
 
 @app.route('/', methods=['GET'])
@@ -26,18 +33,18 @@ def get_hashtag_analytics():
     '''
     if 'hashtag' in request.args:
         hashtag = request.args['hashtag']
-        tweets = get_tweets_with_hashtag(hashtag, app.api)
+        tweets = get_tweets_with_hashtag(hashtag, api)
 
     if 'user' in request.args:
         user = request.args['user']
-        tweets = get_tweets_from_user(user, app.api)
+        tweets = get_tweets_from_user(user, api)
 
     response = analyze_tweets(tweets)
     return make_response(jsonify(response), 201)
 
 
 @app.errorhandler(404)
-def not_found(error):
+def not_found():
     ''' This method handles invalid requests by sending a 404 response.
     '''
     response = {'error': 'bad request'}
