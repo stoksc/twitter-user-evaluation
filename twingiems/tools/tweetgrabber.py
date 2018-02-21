@@ -7,20 +7,18 @@ TODO:
 
 import tweepy
 
+
 def get_tweets_from_user(screen_name, api, count=200):
     ''' Receives a screen name to query and a tweepy api object. Uses this
-    information to return a list of dictionaries, where each dictionary
-    corresponds to a tweet from the screen name.
+    information to return tweets from this user.
     '''
     tweets = api.user_timeline(screen_name=screen_name, count=count)
     return [clean_tweet(tweet) for tweet in tweets]
 
 
-def get_tweets_with_hashtag(hashtag, api, count=1, lang='en'):
+def get_tweets_with_hashtag(hashtag, api, count=10, lang='en'):
     ''' Receives a hashtag to query, a tweepy api object, the number of tweets
-    to grab and the language. Uses this information to query twitter's api and
-    returns an array of dictionaries, where each dictionary corresponds to a
-    tweet that match these criteria.
+    to grab and the language. Uses this information to return tweets with this hashtag.
     '''
     tweets = tweepy.Cursor(api.search,
                            q="#{}".format(hashtag),
@@ -52,7 +50,6 @@ def clean_tweet(tweet):
         tweet_data['retweets'] = 0
 
     if hasattr(tweet, 'reply_count'):
-        print('had replies')
         tweet_data['replies'] = tweet.reply_count
     else:
         tweet_data['replies'] = 0
