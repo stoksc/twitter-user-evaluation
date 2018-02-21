@@ -17,8 +17,8 @@ from .tools.tweetanalytics import analyze_tweets
 app = Flask(__name__)
 
 auth = tweepy.OAuthHandler(
-    'Vx1XFEUQxygdWrGqSIUSDDKMq',
-    'T16DhtlYP7rWxELFgKaDX5IZzRRwzPgIVl5gF9xR845klfmds8')
+    'ogpGnSxqcbT5HoBFcewyv2clw',
+    '7Nz0opa0BvkvqNZ6NB5S2hdwRu8W7gnThz4EDMTRvnc869qm5V')
 auth.set_access_token(
     '318694853-64JKzz76Al4Aakddw7tSEL0Ku6Pvqib9pqHfna8a',
     'nc3H9mEIsdBKeJppub7gtCH6O8wst4SF14p1agoUpmzRa')
@@ -32,7 +32,7 @@ def get_hashtag_analytics():
     and returns some analysis on the hashtag.
     '''
     response = {'error': 'bad request'}
-    
+
     if 'hashtag' in request.args:
         hashtag = request.args['hashtag']
         print(type(api))

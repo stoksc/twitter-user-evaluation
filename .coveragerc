@@ -1,7 +1,6 @@
-[run]
-omit =
-    */tests*
-
 [report]
-exclude_lines =
-    if __name__ == .__main__.:
+omit =
+    */python?.?/*
+    */site-packages/nose/*
+    *__init__*
+    */.eggs/*

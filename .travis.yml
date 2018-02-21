@@ -1,5 +1,10 @@
 language: python
 python:
   - "3.6"
+install:
+  - pip install coveralls
 script:
   - python setup.py test
+after_success:
+  - coverage run --source=twingiems setup.py test
+  - coveralls

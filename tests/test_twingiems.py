@@ -16,12 +16,10 @@ def client(app):
 
 
 def test_user(client):
-    client.get('/',
-               data=dict(user='elonmusk'),
+    client.get('/?user=realdonaldtrump',
                follow_redirects=True)
 
 
 def test_hashtag(client):
-    client.get('/',
-               data=dict(hashtag='spacex'),
+    client.get('/?hashtag=spacex',
                follow_redirects=True)

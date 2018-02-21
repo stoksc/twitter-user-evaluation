@@ -16,7 +16,7 @@ def get_tweets_from_user(screen_name, api, count=200):
     return [clean_tweet(tweet) for tweet in tweets]
 
 
-def get_tweets_with_hashtag(hashtag, api, count=10, lang='en'):
+def get_tweets_with_hashtag(hashtag, api, count=2, lang='en'):
     ''' Receives a hashtag to query, a tweepy api object, the number of tweets
     to grab and the language. Uses this information to return tweets with this hashtag.
     '''
