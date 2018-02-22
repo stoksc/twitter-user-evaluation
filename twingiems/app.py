@@ -17,43 +17,51 @@ from .tools.tweetanalytics import analyze_tweets
 app = Flask(__name__)
 
 auth = tweepy.OAuthHandler(
-    'ogpGnSxqcbT5HoBFcewyv2clw',
-    '7Nz0opa0BvkvqNZ6NB5S2hdwRu8W7gnThz4EDMTRvnc869qm5V')
+    'wGecVg5soVa5lIZR8l5iX5XYi',
+    'C0lATkNWD14ve6FOKHcbK0CoWoRsrFLd8VWdta0YabG3dlmnZF')
 auth.set_access_token(
     '318694853-64JKzz76Al4Aakddw7tSEL0Ku6Pvqib9pqHfna8a',
     'nc3H9mEIsdBKeJppub7gtCH6O8wst4SF14p1agoUpmzRa')
 api = tweepy.API(auth, wait_on_rate_limit=True)
 
+NULL_QUERY_RESPONSE = {
+    'error': 'query returned no tweets'
+}
+
+BAD_QUERY_RESPONSE = {
+    'error': 'request was not hashtag or user'
+}
+
+BAD_ROUTE_RESPONSE = {
+    'error': 'bad route'
+}
+
 
 @app.route('/', methods=['GET'])
-def get_hashtag_analytics():
+def get_analytics():
     ''' This method handles a request of the form:
-    http://serviceurl/?hashtag=hashtagtoquery
+        http://serviceurl/?hashtag=hashtagtoquery
     and returns some analysis on the hashtag.
     '''
-    response = {'error': 'bad request'}
-
+    tweets = []
     if 'hashtag' in request.args:
         hashtag = request.args['hashtag']
-        print(type(api))
         tweets = get_tweets_with_hashtag(hashtag, api)
-        response = analyze_tweets(tweets)
-
-    if 'user' in request.args:
+    elif 'user' in request.args:
         user = request.args['user']
         tweets = get_tweets_from_user(user, api)
-        response = analyze_tweets(tweets)
+    else:
+        return make_response(jsonify(BAD_QUERY_RESPONSE), 400)
 
-    return make_response(jsonify(response), 201)
+    if len(tweets) == 0:
+        return make_response(jsonify(NULL_QUERY_RESPONSE), 400)
+
+    response = analyze_tweets(tweets)
+    return make_response(jsonify(response), 200)
 
 
 @app.errorhandler(404)
-def not_found():
+def not_found(error):
     ''' This method handles invalid requests by sending a 404 response.
     '''
-    response = {'error': 'bad request'}
-    return make_response(jsonify(response), 404)
-
-
-if __name__ == "__main__":
-    app.run()
+    return make_response(jsonify(BAD_ROUTE_RESPONSE), 404)

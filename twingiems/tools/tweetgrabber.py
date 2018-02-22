@@ -21,7 +21,7 @@ def get_tweets_with_hashtag(hashtag, api, count=2, lang='en'):
     to grab and the language. Uses this information to return tweets with this hashtag.
     '''
     tweets = tweepy.Cursor(api.search,
-                           q="#{}".format(hashtag),
+                           q="#%s" % hashtag,
                            count=count,
                            lang=lang)
     return [clean_tweet(tweet) for tweet in tweets.items()]
@@ -31,27 +31,12 @@ def clean_tweet(tweet):
     ''' Takes a tweepy tweet object and returns a dictionary that contains
     the information from the tweet that we actually need.
     '''
-    tweet_data = {
+    return {
         'user' : tweet.user.screen_name,
         'time' : tweet.created_at,
         'text' : tweet.text,
         'timezone' : tweet.user.time_zone,
         'hashtags' : tweet.entities['hashtags'],
+        'retweets' : tweet.retweet_count,
+        'favorites' : tweet.favorite_count
     }
-
-    if hasattr(tweet, 'favorite_count'):
-        tweet_data['favorites'] = tweet.favorite_count
-    else:
-        tweet_data['favorites'] = 0
-
-    if hasattr(tweet, 'retweet_count'):
-        tweet_data['retweets'] = tweet.retweet_count
-    else:
-        tweet_data['retweets'] = 0
-
-    if hasattr(tweet, 'reply_count'):
-        tweet_data['replies'] = tweet.reply_count
-    else:
-        tweet_data['replies'] = 0
-
-    return tweet_data

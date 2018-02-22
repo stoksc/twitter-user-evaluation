@@ -73,4 +73,4 @@ def popularity(tweet):
 def controversiality(tweet):
     ''' Function takes a tweet and returns how controversial a tweet is.
     '''
-    return tweet['replies'] / max(tweet['favorites'] + tweet['retweets'], 1)
+    return MODEL.polarity_scores(tweet['text'])['neg']
