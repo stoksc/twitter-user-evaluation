@@ -1,67 +1,49 @@
 ''' This module uses flask to implement a microservices that exposes a REST API for the
 project's PHP backend to consume. It takes a couple queries:
-    GET /?hashtag=hashtag
-        sends back a json object with analysis of the hashtag
     GET /?user=user
         sends back a json object with analysis of the user
 '''
+import os
 
-from flask import Flask, jsonify, make_response, request
-import tweepy
+from flask import jsonify, make_response, request
 
-from .tools.tweetgrabber import get_tweets_with_hashtag
-from .tools.tweetgrabber import get_tweets_from_user
-from .tools.tweetanalytics import analyze_tweets
+from .tools.analytics import analyze_tweets
+from .tools.default_responses import BAD_QUERY_RESPONSE, BAD_QUERY_CODE, \
+    BAD_ROUTE_RESPONSE, BAD_ROUTE_CODE, NULL_QUERY_RESPONSE, NULL_QUERY_CODE, \
+    OK_QUERY_CODE
+from .tools.flasks import FlaskWithTwitterAPI
+from .tools.retrieval import get_tweets_from_user
 
 
-app = Flask(__name__)
-
-auth = tweepy.OAuthHandler(
-    'wGecVg5soVa5lIZR8l5iX5XYi',
-    'C0lATkNWD14ve6FOKHcbK0CoWoRsrFLd8VWdta0YabG3dlmnZF')
-auth.set_access_token(
-    '318694853-64JKzz76Al4Aakddw7tSEL0Ku6Pvqib9pqHfna8a',
-    'nc3H9mEIsdBKeJppub7gtCH6O8wst4SF14p1agoUpmzRa')
-api = tweepy.API(auth, wait_on_rate_limit=True)
-
-NULL_QUERY_RESPONSE = {
-    'error': 'query returned no tweets'
-}
-
-BAD_QUERY_RESPONSE = {
-    'error': 'request was not hashtag or user'
-}
-
-BAD_ROUTE_RESPONSE = {
-    'error': 'bad route'
-}
+app = FlaskWithTwitterAPI(
+    __name__,
+    twitter_consumer_key=os.environ['TWITTER_CK'],
+    twitter_consumer_secret=os.environ['TWITTER_CS'],
+    twitter_access_token=os.environ['TWITTER_AT'],
+    twitter_access_token_secret=os.environ['TWITTER_ATS'],)
 
 
 @app.route('/', methods=['GET'])
 def get_analytics():
     ''' This method handles a request of the form:
-        http://serviceurl/?hashtag=hashtagtoquery
+        /?user=usertoquery
     and returns some analysis on the hashtag.
     '''
-    tweets = []
-    if 'hashtag' in request.args:
-        hashtag = request.args['hashtag']
-        tweets = get_tweets_with_hashtag(hashtag, api)
-    elif 'user' in request.args:
+    if 'user' in request.args:
         user = request.args['user']
-        tweets = get_tweets_from_user(user, api)
+        tweets = get_tweets_from_user(user, app.api)
     else:
-        return make_response(jsonify(BAD_QUERY_RESPONSE), 400)
+        return make_response(jsonify(BAD_QUERY_RESPONSE), BAD_QUERY_CODE)
 
-    if len(tweets) == 0:
-        return make_response(jsonify(NULL_QUERY_RESPONSE), 400)
+    if not tweets:
+        return make_response(jsonify(NULL_QUERY_RESPONSE), NULL_QUERY_CODE)
 
     response = analyze_tweets(tweets)
-    return make_response(jsonify(response), 200)
+    return make_response(jsonify(response), OK_QUERY_CODE)
 
 
-@app.errorhandler(404)
-def not_found(error):
+@app.errorhandler(BAD_ROUTE_CODE)
+def not_found(_):
     ''' This method handles invalid requests by sending a 404 response.
     '''
-    return make_response(jsonify(BAD_ROUTE_RESPONSE), 404)
+    return make_response(jsonify(BAD_ROUTE_RESPONSE), BAD_ROUTE_CODE)
