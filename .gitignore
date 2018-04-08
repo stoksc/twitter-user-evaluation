@@ -8,6 +8,8 @@ __pycache__/
 
 # Custom ignores
 export_keys.sh
+deployables
+.elasticbeanstalk
 
 # Distribution / packaging
 .Python
