@@ -1,6 +1,7 @@
 ''' This module provides functions that use a tweepy api to returns tweets by a
 user.
 '''
+import calendar
 from collections import namedtuple
 
 
@@ -28,7 +29,7 @@ def clean_tweet(tweet: dict) -> Tweet:
     '''
     return Tweet(
         tweet.user.screen_name,
-        tweet.created_at,
+        calendar.timegm(tweet.created_at.utctimetuple()),
         tweet.text,
         tweet.user.time_zone,
         tweet.entities['hashtags'],
