@@ -1,14 +1,14 @@
 FROM python:3.6-slim
 
-WORKDIR /twingiems
+WORKDIR /twitter_user_evaluation
 
-ADD . /twingiems
+ADD . /twitter_user_evaluation
 
 RUN pip install .
 
 EXPOSE 80
 
-ENV FLASK_APP twingiems
+ENV FLASK_APP twitter_user_evaluation
 ENV FLASK_DEBUG false
 
 CMD ["flask", "run", "--host=0.0.0.0", "--port=80"]

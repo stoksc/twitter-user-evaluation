@@ -2,7 +2,7 @@
 '''
 import pytest
 
-import twingiems
+import twitter_user_evaluation
 
 
 USERS_WITH_TWEETS = [

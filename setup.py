@@ -1,8 +1,8 @@
 from setuptools import setup
 
 setup(
-    name='twingiems',
-    packages=['twingiems', 'twingiems/tools'],
+    name='twitter_user_evaluation',
+    packages=['twitter_user_evaluation', 'twitter_user_evaluation/tools'],
     include_package_data=True,
     install_requires=[
         'flask',
