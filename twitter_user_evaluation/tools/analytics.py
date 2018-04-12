@@ -1,5 +1,6 @@
 ''' This module provides functions for analyzing tweets.
 '''
+
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from rake_nltk import Rake
@@ -24,10 +25,11 @@ def analyze_tweets(tweets: [Tweet]) -> dict:
     return {
         'most_popular_tweet' : max(tweets, key=popularity),
         'most_controversial_tweet' : max(tweets, key=controversiality),
-        'sentiment' : average_sentiment(tweets),
         'related_hashtag' : related_hashtags(tweets),
         'related_user' : related_users(tweets),
         'volume_line_graph': volume_by_interval(tweets, INTERVALS),
+        'radar_graph': sentiment_totals(tweets),
+        'stream_graph': keywords_by_interval(tweets, INTERVALS),
     }
 
 
@@ -57,14 +59,38 @@ def related_users(tweets: [Tweet]) -> dict:
     return occurences
 
 
-def average_sentiment(tweets: [Tweet]) -> float:
-    ''' Function takes a list of tweets and returns the average
-    sentiment of them.
+def sentiment_totals(tweets: [Tweet]) -> dict:
+    ''' Function takes a list of tweets and returns the average qualities about
+    them using NLTK SentimentIntensityAnalyzer.
+
+    Returns a format that, when jsonified, it renderable by this react
+    component:
+        http://nivo.rocks/#/radar
     '''
-    total = 0
+    compound_total = neg_total = pos_total = neu_total = 0
     for tweet in tweets:
-        total += MODEL.polarity_scores(tweet.cleaned_text)['compound']
-    return total/len(tweets)
+        compound_total += MODEL.polarity_scores(tweet.cleaned_text)['compound']
+        neg_total += MODEL.polarity_scores(tweet.cleaned_text)['neg']
+        pos_total += MODEL.polarity_scores(tweet.cleaned_text)['pos']
+        neu_total += MODEL.polarity_scores(tweet.cleaned_text)['neu']
+    return [
+      {
+        "type": "compound",
+        "sentiment": (compound_total / len(tweets)),
+      },
+      {
+        "type": "negative",
+        "sentiment": (neg_total / len(tweets)),
+      },
+      {
+        "type": "positive",
+        "sentiment": (pos_total / len(tweets)),
+      },
+      {
+        "type": "neutral",
+        "sentiment": (neu_total / len(tweets)),
+      },
+    ]
 
 
 def popularity(tweet: Tweet) -> int:
@@ -84,13 +110,10 @@ def volume_by_interval(tweets: [Tweet], intervals: int) -> [dict]:
     tweets in the bunch. It then breaks the length of time between these into
     intervals and returns the average sentiment of tweets per interval.
 
-    What it returns is a dictionary that, when jsonified renders this:
+    What it returns is a dictionary that, when jsonified renders this React
+    component.
      http://nivo.rocks/#/line
-    React component.
     '''
-    if not tweets:
-        return []
-
     favorites_by_interval = {
         'id': 'Favorites',
         'color': HSL1,
@@ -136,3 +159,51 @@ def volume_by_interval(tweets: [Tweet], intervals: int) -> [dict]:
         retweets_by_interval,
         totals_by_interval,
     ]
+
+
+def keywords_by_interval(tweets: [Tweet], intervals: int) -> [dict]:
+    ''' This function takes a tweets, groups the tweets by intervals of time,
+    extracts the keywords from the text and stores the keywords that occured
+    in each interval.
+
+    It returns is a dictionary that, when jsonified renders this:
+     http://nivo.rocks/#/stream
+    React component.
+    '''
+    RAKE.extract_keywords_from_sentences(
+        [tweet.cleaned_text for tweet in tweets])
+    all_keywords = RAKE.get_ranked_phrases_with_scores()
+    print(all_keywords)
+    highest_nonsimilar_keywords = {}
+    for score, keyword in all_keywords:
+        print('hit word', score, keyword)
+        if len(highest_nonsimilar_keywords) > 10:
+            break
+        for high_keyword in highest_nonsimilar_keywords:
+            if is_similar(keyword, high_keyword):
+                highest_nonsimilar_keywords[high_keyword] += score
+                break
+        else:
+            highest_nonsimilar_keywords[keyword] = score
+    return highest_nonsimilar_keywords
+
+
+def is_similar(str1: str, str2: str) -> bool:
+    ''' This function takes two strings and determines if they are similar by
+    laying them over each other and counting pairwise matches. Probably slow,
+    but only used on small strings. Strings are considered similar if in some
+    orientation, they match at atleast len(longer_string) / 2 places.
+    '''
+    short_string, long_string = sorted([str1, str2], key=len)
+    iterations = (len(long_string) - len(short_string))
+    best_matches = 0
+    for _ in range(iterations):
+        matches = 0
+        for char1, char2 in zip(long_string, short_string):
+            if char1 == char2:
+                matches += 1
+        best_matches = matches if matches > best_matches else best_matches
+        long_string = long_string[1:]
+    if (best_matches > (len(long_string) / 2)):
+        return True
+    return False

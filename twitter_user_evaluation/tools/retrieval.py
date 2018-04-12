@@ -3,6 +3,7 @@ user.
 '''
 import calendar
 from collections import namedtuple
+import re
 
 from nltk.tokenize import TweetTokenizer
 from tweepy.models import Status
@@ -10,6 +11,10 @@ from tweepy.api import API
 
 
 TKNZR = TweetTokenizer(strip_handles=True)
+URL_REGEX = 'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+'
+HASHTAG_REGEX = r'/(^|\b)@\S*($|\b)/'
+HANDLE_REGEX = r'/(^|\b)#\S*($|\b)/'
+
 Tweet = namedtuple('Tweet', [
     'screen_name',
     'time',
@@ -34,11 +39,14 @@ def clean_tweet(tweet: Status) -> Tweet:
     ''' Takes a tweepy tweet object and returns a dictionary that contains
     the information from the tweet that we actually need.
     '''
+    cleaned_text = re.sub(URL_REGEX, '',
+                   re.sub(HASHTAG_REGEX, '',
+                   re.sub(HANDLE_REGEX, '', tweet.text)))
     return Tweet(
         tweet.user.screen_name,
         calendar.timegm(tweet.created_at.utctimetuple()),
         tweet.text,
-        ' '.join(TKNZR.tokenize(tweet.text)),
+        cleaned_text,
         tweet.user.time_zone,
         [hashtag['text'].lower() for hashtag in tweet.entities['hashtags']],
         [user['screen_name'] for user in tweet.entities['user_mentions']],
