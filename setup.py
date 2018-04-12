@@ -7,6 +7,7 @@ setup(
     install_requires=[
         'flask',
         'nltk',
+        'rake-nltk',
         'tweepy',
     ],
     setup_requires=[

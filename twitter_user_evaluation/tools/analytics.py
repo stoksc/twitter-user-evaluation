@@ -1,22 +1,20 @@
 ''' This module provides functions for analyzing tweets.
 '''
-import datetime
-import re
-
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from rake_nltk import Rake
 
 from .retrieval import Tweet
 
 nltk.download('vader_lexicon')
 
 
+HSL1 = "hsl(280, 70%, 50%)"
+HSL2 = "hsl(15, 70%, 50%, 1)"
+HSL3 = "hsl(175, 70%, 50%, 1)"
 INTERVALS = 60
 MODEL = SentimentIntensityAnalyzer()
-REGEX_TO_CLEAN = r'<[^>]+>|(?:@[\w_]+)|(?:\#+[\w_]+[\w\'_\-]*[\w_]+)|\
-http[s]?://(?:[a-z]|[0-9]|[$-_@.&amp;+]|[!*\(\),]|\
-(?:%[0-9a-f][0-9a-f]))+|(?:(?:\d+,?)+(?:\.?\d+)?)'
-REGEX_TO_FIND_HANDLES = r'(?<=^|(?<=[^a-zA-Z0-9-_\.]))@([A-Za-z]+[A-Za-z0-9]+)'
+RAKE = Rake()
 
 
 def analyze_tweets(tweets: [Tweet]) -> dict:
@@ -29,7 +27,7 @@ def analyze_tweets(tweets: [Tweet]) -> dict:
         'sentiment' : average_sentiment(tweets),
         'related_hashtag' : related_hashtags(tweets),
         'related_user' : related_users(tweets),
-        'activity_by_interval': activity_by_interval(tweets, INTERVALS),
+        'volume_line_graph': volume_by_interval(tweets, INTERVALS),
     }
 
 
@@ -38,8 +36,7 @@ def related_hashtags(tweets: [Tweet]) -> dict:
     '''
     occurences = {}
     for tweet in tweets:
-        for hashtag in tweet.hashtags:
-            hashtag = hashtag['text'].lower()
+        for hashtag in tweet.hashtag_mentions:
             if hashtag in occurences:
                 occurences[hashtag] += 1
             else:
@@ -52,14 +49,11 @@ def related_users(tweets: [Tweet]) -> dict:
     '''
     occurences = {}
     for tweet in tweets:
-        handle = re.search(REGEX_TO_FIND_HANDLES, tweet.text)
-        if not handle:
-            continue
-        handle = handle.group(0)
-        if handle in occurences:
-            occurences[handle] += 1
-        else:
-            occurences[handle] = 1
+        for screen_name in tweet.user_mentions:
+            if screen_name in occurences:
+                occurences[screen_name] += 1
+            else:
+                occurences[screen_name] = 1
     return occurences
 
 
@@ -67,18 +61,10 @@ def average_sentiment(tweets: [Tweet]) -> float:
     ''' Function takes a list of tweets and returns the average
     sentiment of them.
     '''
-    tweet_texts = [clean_text(tweet) for tweet in tweets]
     total = 0
-    for tweet_text in tweet_texts:
-        total += MODEL.polarity_scores(tweet_text)['compound']
+    for tweet in tweets:
+        total += MODEL.polarity_scores(tweet.cleaned_text)['compound']
     return total/len(tweets)
-
-
-def clean_text(tweet: Tweet) -> None:
-    ''' Takes tweets and returns tweets with tweet.text as safe, plain text,
-    cleaned of emojis, foreign characters and everything else that breaks NLTK.
-    '''
-    return re.sub(REGEX_TO_CLEAN, '', tweet.text)
 
 
 def popularity(tweet: Tweet) -> int:
@@ -90,33 +76,63 @@ def popularity(tweet: Tweet) -> int:
 def controversiality(tweet: Tweet) -> float:
     ''' Function takes a tweet and returns how controversial a tweet is.
     '''
-    return MODEL.polarity_scores(tweet.text)['neg']
+    return MODEL.polarity_scores(tweet.cleaned_text)['neg']
 
 
-def activity_by_interval(tweets: [Tweet], intervals: int) -> [dict]:
+def volume_by_interval(tweets: [Tweet], intervals: int) -> [dict]:
     ''' This function takes a list of tweets and locates the newest and oldest
     tweets in the bunch. It then breaks the length of time between these into
     intervals and returns the average sentiment of tweets per interval.
+
+    What it returns is a dictionary that, when jsonified renders this:
+     http://nivo.rocks/#/line
+    React component.
     '''
-    activity_by_interval = []
-    if not len(tweets):
+    if not tweets:
         return []
 
+    favorites_by_interval = {
+        'id': 'Favorites',
+        'color': HSL1,
+        'data': []
+    }
+    retweets_by_interval = {
+        'id': 'Retweets',
+        'color': HSL2,
+        'data': []
+    }
+    totals_by_interval = {
+        'id': 'Totals',
+        'color': HSL3,
+        'data': []
+    }
     tweets.sort(key=lambda tweet: tweet.time)
     interval_length = (tweets[-1].time - tweets[0].time) / intervals
     current_interval = tweets[0].time + interval_length
-    current_interval_tally = 0
-    current_interval_sentiment = 0
+    current_favorites_tally = current_retweets_tally = 0
     for tweet in tweets:
         if tweet.time > current_interval:
-            activity_by_interval.append({
-                'interval': (current_interval - (interval_length / 2)),
-                'tweets': current_interval_tally,
-                'sentiment': current_interval_sentiment / current_interval_tally
+            favorites_by_interval['data'].append({
+                'color': HSL1,
+                'x': (current_interval - (interval_length / 2)),
+                'y': current_favorites_tally,
+            })
+            retweets_by_interval['data'].append({
+                'color': HSL2,
+                'x': (current_interval - (interval_length / 2)),
+                'y': current_retweets_tally,
+            })
+            totals_by_interval['data'].append({
+                'color': HSL3,
+                'x': (current_interval - (interval_length / 2)),
+                'y': (current_favorites_tally + current_retweets_tally),
             })
             current_interval += interval_length
-            current_interval_tally = 0
-            current_interval_sentiment = 0
-        current_interval_tally += 1
-        current_interval_sentiment += MODEL.polarity_scores(clean_text(tweet))['compound']
-    return activity_by_interval
+            current_favorites_tally = current_retweets_tally = 0
+        current_favorites_tally += tweet.favorites
+        current_retweets_tally += tweet.retweets
+    return [
+        favorites_by_interval,
+        retweets_by_interval,
+        totals_by_interval,
+    ]

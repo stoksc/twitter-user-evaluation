@@ -25,7 +25,7 @@ BAD_ROUTE = '404 NOT FOUND'
 def app():
     ''' Generates our flask app.
     '''
-    yield twingiems.app
+    yield twitter_user_evaluation.app
 
 
 @pytest.fixture
