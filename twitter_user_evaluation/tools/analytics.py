@@ -2,9 +2,12 @@
 '''
 import operator
 
+from gensim.models import Word2Vec
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.tag import pos_tag
+import numpy as np
+from sklearn.manifold import TSNE
 
 from .retrieval import Tweet
 
@@ -28,9 +31,10 @@ def analyze_tweets(tweets: [Tweet]) -> dict:
         'most_controversial_tweet' : max(tweets, key=controversiality),
         'related_hashtag' : related_hashtags(tweets),
         'related_user' : related_users(tweets),
-        'volume_line_graph': volume_by_interval(tweets, INTERVALS),
-        'radar_graph': sentiment_totals(tweets),
-        'stream_graph': keywords_by_interval(tweets, INTERVALS),
+        'volume_line_graph' : volume_by_interval(tweets, INTERVALS),
+        'radar_graph' : sentiment_totals(tweets),
+        'stream_graph' : keywords_by_interval(tweets, INTERVALS),
+        'scatter_graph' : generate_tsne_visualized_word_embedding(tweets)
     }
 
 
@@ -249,3 +253,29 @@ def is_similar(str1: str, str2: str) -> bool:
     if best_matches > (len(long_string) / 2):
         return True
     return False
+
+
+def generate_tsne_visualized_word_embedding(tweets: [Tweet]) -> dict:
+    ''' This function takes tweets and generates a word embedding from these
+    tweets. After this, it uses t-SNE to generate a visualization of the word
+    embedding to be displayed by this React component:
+        http://nivo.rocks/#/scatterplot/
+    '''
+    sentences = [tweet.cleaned_text.split() for tweet in tweets]
+    model = Word2Vec(sentences, size=100, window=5, min_count=5, workers=4)
+    vocab = {}
+    for word in model.wv.vocab:
+        vocab[word] = model[word]
+    tsne_model = TSNE(perplexity=40,
+                      n_components=2,
+                      init='pca',
+                      n_iter=2500,
+                      random_state=23)
+    tsne_values = tsne_model.fit_transform([x for x in vocab.values()])
+    return [{
+        'id' : 'all_words',
+        'data' : [{
+            'id' : label,
+            'x' : np.float64(value[0]),
+            'y' : np.float64(value[1]),
+        } for label, value in zip(vocab.keys(), tsne_values)]}]
