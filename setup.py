@@ -6,8 +6,9 @@ setup(
     include_package_data=True,
     install_requires=[
         'flask',
+        'gensim',
         'nltk',
-        'rake-nltk',
+        'sklearn',
         'tweepy',
     ],
     setup_requires=[
