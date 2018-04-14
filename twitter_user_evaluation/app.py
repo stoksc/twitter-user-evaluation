@@ -1,5 +1,5 @@
-''' This module uses flask to implement a microservices that exposes a REST API for the
-project's PHP backend to consume. It takes a couple queries:
+''' This module uses flask to implement a microservices that exposes a REST API
+for the project's PHP backend to consume. It takes a couple queries:
     GET /?user=user
         sends back a json object with analysis of the user
 '''

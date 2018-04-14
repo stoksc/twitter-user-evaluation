@@ -1,8 +1,8 @@
 ''' This module defines an extension of the default Flask.
 '''
-
 from flask import Flask
 import tweepy
+
 
 class FlaskWithTwitterAPI(Flask):
     ''' This class just extends flask.Flask while holding the connection to the

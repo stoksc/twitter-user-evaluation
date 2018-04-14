@@ -1,0 +1,59 @@
+{
+  "$id": "http://example.com/example.json",
+  "type": "array",
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "items": {
+    "$id": "http://example.com/example.json/items",
+    "type": "object",
+    "properties": {
+      "id": {
+        "$id": "http://example.com/example.json/items/properties/id",
+        "type": "string",
+        "title": "The Id Schema ",
+        "default": "",
+        "examples": [
+          "group A"
+        ]
+      },
+      "data": {
+        "$id": "http://example.com/example.json/items/properties/data",
+        "type": "array",
+        "items": {
+          "$id": "http://example.com/example.json/items/properties/data/items",
+          "type": "object",
+
+          "properties": {
+            "id": {
+              "$id": "http://example.com/example.json/items/properties/data/items/properties/id",
+              "type": "integer",
+              "title": "The Id Schema ",
+              "default": 0,
+              "examples": [
+                0
+              ]
+            },
+            "x": {
+              "$id": "http://example.com/example.json/items/properties/data/items/properties/x",
+              "type": "integer",
+              "title": "The X Schema ",
+              "default": 0,
+              "examples": [
+                74
+              ]
+       },
+            "y": {
+              "$id": "http://example.com/example.json/items/properties/data/items/properties/y",
+              "type": "integer",
+              "title": "The Y Schema ",
+              "default": 0,
+              "examples": [
+                46
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

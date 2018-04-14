@@ -1,0 +1,66 @@
+{
+  "$id": "http://example.com/example.json",
+  "type": "array",
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "items": {
+    "$id": "http://example.com/example.json/items",
+    "type": "object",
+    "properties": {
+      "var1": {
+        "$id": "http://example.com/example.json/items/properties/var1",
+        "type": "integer",
+        "title": "The Var1 Schema ",
+        "default": 0,
+        "examples": [
+          55
+        ]
+      },
+      "var2": {
+        "$id": "http://example.com/example.json/items/properties/var2",
+        "type": "integer",
+        "title": "The Var2 Schema ",
+        "default": 0,
+        "examples": [
+          173
+        ]
+      },
+      "var3": {
+        "$id": "http://example.com/example.json/items/properties/var3",
+        "type": "integer",
+        "title": "The Var3 Schema ",
+        "default": 0,
+        "examples": [
+          39
+        ]
+      },
+      "var4": {
+        "$id": "http://example.com/example.json/items/properties/var4",
+        "type": "integer",
+        "title": "The Var4 Schema ",
+        "default": 0,
+        "examples": [
+          170
+        ]
+      },
+      "var5": {
+        "$id": "http://example.com/example.json/items/properties/var5",
+        "type": "integer",
+        "title": "The Var5 Schema ",
+        "default": 0,
+        "examples": [
+          35
+        ]
+      },
+      "var6": {
+        "$id": "http://example.com/example.json/items/properties/var6",
+        "type": "integer",
+        "title": "The Var6 Schema ",
+        "default": 0,
+        "examples": [
+          11
+        ]
+      }
+    }
+  }
+}

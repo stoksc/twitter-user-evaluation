@@ -1,4 +1,5 @@
-''' This module provides integration testing for the app.
+''' This module provides testing for flask app. It tests all routes and requests
+for proper responses.
 '''
 import pytest
 
@@ -15,10 +16,9 @@ USER_WITHOUT_TWEETS = 'stoked_'
 USER_ROUTE = '/?user={}'
 BAD_ROUTE = '/badroute'
 BAD_REQUEST = '/?badrequest=something'
-
 OK_RESPONSE = '200 OK'
-BAD_RESPONSE = '400 BAD REQUEST'
-BAD_ROUTE = '404 NOT FOUND'
+BAD_REQUEST_RESPONSE = '400 BAD REQUEST'
+BAD_ROUTE_RESPONSE = '404 NOT FOUND'
 
 
 @pytest.fixture
@@ -49,7 +49,7 @@ def test_bad_route(client):
     '''
     response = client.get(BAD_ROUTE,
                          follow_redirects=True)
-    assert response.status == BAD_ROUTE
+    assert response.status == BAD_ROUTE_RESPONSE
 
 
 def test_bad_request(client):
@@ -57,11 +57,11 @@ def test_bad_request(client):
     '''
     response = client.get(BAD_REQUEST,
                          follow_redirects=True)
-    assert response.status == BAD_RESPONSE
+    assert response.status == BAD_REQUEST_RESPONSE
 
 
 def test_bad_query(client):
     ''' Tests the API's response given a null query request.
     '''
     response = client.get(USER_ROUTE.format(USER_WITHOUT_TWEETS))
-    assert response.status == BAD_RESPONSE
+    assert response.status == BAD_REQUEST_RESPONSE

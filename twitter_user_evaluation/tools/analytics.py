@@ -1,5 +1,6 @@
 ''' This module provides functions for analyzing tweets.
 '''
+from typing import List
 import operator
 
 from gensim.models import Word2Vec
@@ -22,23 +23,23 @@ INTERVALS = 60
 MODEL = SentimentIntensityAnalyzer()
 
 
-def analyze_tweets(tweets: [Tweet]) -> dict:
+def analyze_tweets(tweets: List[Tweet]):
     ''' This function takes a group of tweets and returns statistics
-    on them like average sentiment and related hashtags
+    on them like average sentiment and related hashtags.
     '''
     return {
-        'most_popular_tweet' : max(tweets, key=popularity),
-        'most_controversial_tweet' : max(tweets, key=controversiality),
-        'related_hashtag' : related_hashtags(tweets),
-        'related_user' : related_users(tweets),
-        'volume_line_graph' : volume_by_interval(tweets, INTERVALS),
-        'radar_graph' : sentiment_totals(tweets),
-        'stream_graph' : keywords_by_interval(tweets, INTERVALS),
-        'scatter_graph' : generate_tsne_visualized_word_embedding(tweets)
+        'most_popular_tweet': max(tweets, key=popularity),
+        'most_controversial_tweet': max(tweets, key=controversiality),
+        'related_hashtag': related_hashtags(tweets),
+        'related_user': related_users(tweets),
+        'volume_line_graph': volume_by_interval(tweets, INTERVALS),
+        'radar_graph': sentiment_totals(tweets),
+        'stream_graph': keywords_by_interval(tweets, INTERVALS),
+        'scatter_graph': generate_tsne_visualized_word_embedding(tweets)
     }
 
 
-def related_hashtags(tweets: [Tweet]) -> dict:
+def related_hashtags(tweets: List[Tweet]):
     ''' Function takes a list of tweets and returns the hashtags that appear.
 
     What it returns is a list of dictionaries that, when jsonified, renders as
@@ -54,13 +55,14 @@ def related_hashtags(tweets: [Tweet]) -> dict:
                 hashtag_occurences[hashtag] = 1
 
     return [{
-        'id' : hashtag,
-        'label' : hashtag,
-        'value' : occurences,
-        'color' : HSL1} for hashtag, occurences in hashtag_occurences.items()]
+        'id': hashtag,
+        'label': hashtag,
+        'value': occurences,
+        'color': HSL1,
+        } for hashtag, occurences in hashtag_occurences.items()]
 
 
-def related_users(tweets: [Tweet]) -> dict:
+def related_users(tweets: List[Tweet]):
     ''' Function takes a list of tweets and returns the users that appear.
 
     What it returns is a list of dictionaries that, when jsonified, renders as
@@ -75,14 +77,15 @@ def related_users(tweets: [Tweet]) -> dict:
             else:
                 user_occurences[screen_name] = 1
 
-    return  [{
-        'id' : user,
-        'label' : user,
-        'value' : occurences,
-        'color' : HSL1} for user, occurences in user_occurences.items()]
+    return [{
+        'id': user,
+        'label': user,
+        'value': occurences,
+        'color': HSL1,
+        } for user, occurences in user_occurences.items()]
 
 
-def sentiment_totals(tweets: [Tweet]) -> dict:
+def sentiment_totals(tweets: List[Tweet]):
     ''' Function takes a list of tweets and returns the average qualities about
     them using NLTK SentimentIntensityAnalyzer.
 
@@ -96,6 +99,7 @@ def sentiment_totals(tweets: [Tweet]) -> dict:
         neg_total += MODEL.polarity_scores(tweet.cleaned_text)['neg']
         pos_total += MODEL.polarity_scores(tweet.cleaned_text)['pos']
         neu_total += MODEL.polarity_scores(tweet.cleaned_text)['neu']
+
     return [
         {
             "type": "compound",
@@ -116,41 +120,41 @@ def sentiment_totals(tweets: [Tweet]) -> dict:
     ]
 
 
-def popularity(tweet: Tweet) -> int:
+def popularity(tweet: Tweet):
     ''' Function takes a tweet and returns how popular the tweet is.
     '''
     return tweet.favorites + tweet.retweets
 
 
-def controversiality(tweet: Tweet) -> float:
+def controversiality(tweet: Tweet):
     ''' Function takes a tweet and returns how controversial a tweet is.
     '''
     return MODEL.polarity_scores(tweet.cleaned_text)['neg']
 
 
-def volume_by_interval(tweets: [Tweet], intervals: int) -> [dict]:
+def volume_by_interval(tweets: List[Tweet], intervals: int):
     ''' This function takes a list of tweets and locates the newest and oldest
     tweets in the bunch. It then breaks the length of time between these into
     intervals and returns the average sentiment of tweets per interval.
 
     What it returns is a dictionary that, when jsonified renders this React
     component.
-     http://nivo.rocks/#/line
+        http://nivo.rocks/#/line
     '''
     favorites_by_interval = {
         'id': 'Favorites',
         'color': HSL1,
-        'data': []
+        'data': [],
     }
     retweets_by_interval = {
         'id': 'Retweets',
         'color': HSL2,
-        'data': []
+        'data': [],
     }
     totals_by_interval = {
         'id': 'Totals',
         'color': HSL3,
-        'data': []
+        'data': [],
     }
     tweets.sort(key=lambda tweet: tweet.time)
     interval_length = (tweets[-1].time - tweets[0].time) / intervals
@@ -160,17 +164,17 @@ def volume_by_interval(tweets: [Tweet], intervals: int) -> [dict]:
         if tweet.time > current_interval:
             favorites_by_interval['data'].append({
                 'color': HSL1,
-                'x': (current_interval - (interval_length / 2)),
+                'x': str(current_interval - (interval_length / 2)),
                 'y': current_favorites_tally,
             })
             retweets_by_interval['data'].append({
                 'color': HSL2,
-                'x': (current_interval - (interval_length / 2)),
+                'x': str(current_interval - (interval_length / 2)),
                 'y': current_retweets_tally,
             })
             totals_by_interval['data'].append({
                 'color': HSL3,
-                'x': (current_interval - (interval_length / 2)),
+                'x': str(current_interval - (interval_length / 2)),
                 'y': (current_favorites_tally + current_retweets_tally),
             })
             current_interval += interval_length
@@ -184,13 +188,13 @@ def volume_by_interval(tweets: [Tweet], intervals: int) -> [dict]:
     ]
 
 
-def keywords_by_interval(tweets: [Tweet], intervals: int) -> [dict]:
+def keywords_by_interval(tweets: List[Tweet], intervals: int):
     ''' This function takes a tweets, groups the tweets by intervals of time,
     extracts the keywords from the text and stores the keywords that occured
     in each interval.
 
     It returns is a dictionary that, when jsonified renders this:
-     http://nivo.rocks/#/stream
+        http://nivo.rocks/#/stream
     React component.
     '''
     all_keywords_by_interval = []
@@ -204,8 +208,8 @@ def keywords_by_interval(tweets: [Tweet], intervals: int) -> [dict]:
             current_interval += interval_length
             current_interval_keywords = {
                 keyword: 0 for keyword in keywords_to_track}
-        keywords = [word for word, pos in pos_tag(tweet.cleaned_text.split()) \
-                 if pos == 'NNP']
+        keywords = [word for word, pos in pos_tag(tweet.cleaned_text.split())
+                    if pos == 'NNP']
         for keyword in keywords:
             for tracked_keyword in keywords_to_track:
                 if is_similar(keyword, tracked_keyword):
@@ -214,7 +218,7 @@ def keywords_by_interval(tweets: [Tweet], intervals: int) -> [dict]:
     return all_keywords_by_interval
 
 
-def highest_keywords(tweets: [Tweet], number_of_keywords=25) -> dict:
+def highest_keywords(tweets: List[Tweet], number_of_keywords=25):
     ''' This function takes a tweets, rake them for keywords and determines the
     n strongest keywords from this document. pos=part of speech
     '''
@@ -234,7 +238,7 @@ def highest_keywords(tweets: [Tweet], number_of_keywords=25) -> dict:
     return [word for word, score in top_keywords]
 
 
-def is_similar(str1: str, str2: str) -> bool:
+def is_similar(str1: str, str2: str):
     ''' This function takes two strings and determines if they are similar by
     laying them over each other and counting pairwise matches. Probably slow,
     but only used on small strings. Strings are considered similar if in some
@@ -255,7 +259,7 @@ def is_similar(str1: str, str2: str) -> bool:
     return False
 
 
-def generate_tsne_visualized_word_embedding(tweets: [Tweet]) -> dict:
+def generate_tsne_visualized_word_embedding(tweets: List[Tweet]):
     ''' This function takes tweets and generates a word embedding from these
     tweets. After this, it uses t-SNE to generate a visualization of the word
     embedding to be displayed by this React component:
@@ -272,10 +276,12 @@ def generate_tsne_visualized_word_embedding(tweets: [Tweet]) -> dict:
                       n_iter=2500,
                       random_state=23)
     tsne_values = tsne_model.fit_transform([x for x in vocab.values()])
+    scale = max(max(tsne_values, key=lambda x: max(x)))
     return [{
-        'id' : 'all_words',
-        'data' : [{
-            'id' : label,
-            'x' : np.float64(value[0]),
-            'y' : np.float64(value[1]),
-        } for label, value in zip(vocab.keys(), tsne_values)]}]
+        'id': label,
+        'data': [{
+            'id': index,
+            'x': int(scale * np.float64(value[0])),
+            'y': int(scale * np.float64(value[1])),
+        }]} for index, (label, value) in enumerate(zip(vocab.keys(),
+                                                       tsne_values))]
