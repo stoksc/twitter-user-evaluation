@@ -16,5 +16,6 @@ setup(
     ],
     tests_require=[
         'pytest',
+        'jsonschema',
     ],
 )

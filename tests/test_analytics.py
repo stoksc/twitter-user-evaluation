@@ -16,6 +16,8 @@ SCHEMA_FILES = {
     'scatter_graph': 'scatter_schema.json',
     'volume_line_graph': 'line_schema.json',
     'stream_graph': 'stream_schema.json',
+    'related_hashtag': 'pie_schema.json',
+    'related_user': 'pie_schema.json',
 }
 
 
