@@ -1,21 +1,22 @@
 ''' This module provides functions for analyzing tweets.
 '''
+import operator
 
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-from rake_nltk import Rake
+from nltk.tag import pos_tag
 
 from .retrieval import Tweet
 
-nltk.download('vader_lexicon')
 
+nltk.download('vader_lexicon')
+nltk.download('averaged_perceptron_tagger')
 
 HSL1 = "hsl(280, 70%, 50%)"
 HSL2 = "hsl(15, 70%, 50%, 1)"
 HSL3 = "hsl(175, 70%, 50%, 1)"
 INTERVALS = 60
 MODEL = SentimentIntensityAnalyzer()
-RAKE = Rake()
 
 
 def analyze_tweets(tweets: [Tweet]) -> dict:
@@ -35,28 +36,46 @@ def analyze_tweets(tweets: [Tweet]) -> dict:
 
 def related_hashtags(tweets: [Tweet]) -> dict:
     ''' Function takes a list of tweets and returns the hashtags that appear.
+
+    What it returns is a list of dictionaries that, when jsonified, renders as
+    this React comonent:
+        http://nivo.rocks/#/pie
     '''
-    occurences = {}
+    hashtag_occurences = {}
     for tweet in tweets:
         for hashtag in tweet.hashtag_mentions:
-            if hashtag in occurences:
-                occurences[hashtag] += 1
+            if hashtag in hashtag_occurences:
+                hashtag_occurences[hashtag] += 1
             else:
-                occurences[hashtag] = 1
-    return occurences
+                hashtag_occurences[hashtag] = 1
+
+    return [{
+        'id' : hashtag,
+        'label' : hashtag,
+        'value' : occurences,
+        'color' : HSL1} for hashtag, occurences in hashtag_occurences.items()]
 
 
 def related_users(tweets: [Tweet]) -> dict:
     ''' Function takes a list of tweets and returns the users that appear.
+
+    What it returns is a list of dictionaries that, when jsonified, renders as
+    this React comonent:
+        http://nivo.rocks/#/pie
     '''
-    occurences = {}
+    user_occurences = {}
     for tweet in tweets:
         for screen_name in tweet.user_mentions:
-            if screen_name in occurences:
-                occurences[screen_name] += 1
+            if screen_name in user_occurences:
+                user_occurences[screen_name] += 1
             else:
-                occurences[screen_name] = 1
-    return occurences
+                user_occurences[screen_name] = 1
+
+    return  [{
+        'id' : user,
+        'label' : user,
+        'value' : occurences,
+        'color' : HSL1} for user, occurences in user_occurences.items()]
 
 
 def sentiment_totals(tweets: [Tweet]) -> dict:
@@ -74,22 +93,22 @@ def sentiment_totals(tweets: [Tweet]) -> dict:
         pos_total += MODEL.polarity_scores(tweet.cleaned_text)['pos']
         neu_total += MODEL.polarity_scores(tweet.cleaned_text)['neu']
     return [
-      {
-        "type": "compound",
-        "sentiment": (compound_total / len(tweets)),
-      },
-      {
-        "type": "negative",
-        "sentiment": (neg_total / len(tweets)),
-      },
-      {
-        "type": "positive",
-        "sentiment": (pos_total / len(tweets)),
-      },
-      {
-        "type": "neutral",
-        "sentiment": (neu_total / len(tweets)),
-      },
+        {
+            "type": "compound",
+            "sentiment": (compound_total / len(tweets)),
+        },
+        {
+            "type": "negative",
+            "sentiment": (neg_total / len(tweets)),
+        },
+        {
+            "type": "positive",
+            "sentiment": (pos_total / len(tweets)),
+        },
+        {
+            "type": "neutral",
+            "sentiment": (neu_total / len(tweets)),
+        },
     ]
 
 
@@ -170,22 +189,45 @@ def keywords_by_interval(tweets: [Tweet], intervals: int) -> [dict]:
      http://nivo.rocks/#/stream
     React component.
     '''
-    RAKE.extract_keywords_from_sentences(
-        [tweet.cleaned_text for tweet in tweets])
-    all_keywords = RAKE.get_ranked_phrases_with_scores()
-    print(all_keywords)
-    highest_nonsimilar_keywords = {}
-    for score, keyword in all_keywords:
-        print('hit word', score, keyword)
-        if len(highest_nonsimilar_keywords) > 10:
-            break
-        for high_keyword in highest_nonsimilar_keywords:
-            if is_similar(keyword, high_keyword):
-                highest_nonsimilar_keywords[high_keyword] += score
-                break
-        else:
-            highest_nonsimilar_keywords[keyword] = score
-    return highest_nonsimilar_keywords
+    all_keywords_by_interval = []
+    keywords_to_track = highest_keywords(tweets)
+    interval_length = (tweets[-1].time - tweets[0].time) / intervals
+    current_interval = tweets[0].time + interval_length
+    current_interval_keywords = {keyword: 0 for keyword in keywords_to_track}
+    for tweet in tweets:
+        if tweet.time > current_interval:
+            all_keywords_by_interval.append(current_interval_keywords)
+            current_interval += interval_length
+            current_interval_keywords = {
+                keyword: 0 for keyword in keywords_to_track}
+        keywords = [word for word, pos in pos_tag(tweet.cleaned_text.split()) \
+                 if pos == 'NNP']
+        for keyword in keywords:
+            for tracked_keyword in keywords_to_track:
+                if is_similar(keyword, tracked_keyword):
+                    current_interval_keywords[tracked_keyword] += 1
+                    break
+    return all_keywords_by_interval
+
+
+def highest_keywords(tweets: [Tweet], number_of_keywords=25) -> dict:
+    ''' This function takes a tweets, rake them for keywords and determines the
+    n strongest keywords from this document. pos=part of speech
+    '''
+    pos_tag_sents = [pos_tag(tweet.cleaned_text.split()) for tweet in tweets]
+    keywords = {}
+    for tagged_sentence in pos_tag_sents:
+        for word, pos in tagged_sentence:
+            if pos != 'NNP':
+                continue
+            if word.lower() in keywords:
+                keywords[word.lower()] += 1
+            else:
+                keywords[word.lower()] = 1
+    top_keywords = sorted(
+        keywords.items(),
+        key=operator.itemgetter(1))[-number_of_keywords:]
+    return [word for word, score in top_keywords]
 
 
 def is_similar(str1: str, str2: str) -> bool:
@@ -204,6 +246,6 @@ def is_similar(str1: str, str2: str) -> bool:
                 matches += 1
         best_matches = matches if matches > best_matches else best_matches
         long_string = long_string[1:]
-    if (best_matches > (len(long_string) / 2)):
+    if best_matches > (len(long_string) / 2):
         return True
     return False

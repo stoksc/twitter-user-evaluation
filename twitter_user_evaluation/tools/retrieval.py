@@ -11,7 +11,7 @@ from tweepy.api import API
 
 
 TKNZR = TweetTokenizer(strip_handles=True)
-URL_REGEX = 'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+'
+URL_REGEX = r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+'
 HASHTAG_REGEX = r'/(^|\b)@\S*($|\b)/'
 HANDLE_REGEX = r'/(^|\b)#\S*($|\b)/'
 
@@ -40,8 +40,8 @@ def clean_tweet(tweet: Status) -> Tweet:
     the information from the tweet that we actually need.
     '''
     cleaned_text = re.sub(URL_REGEX, '',
-                   re.sub(HASHTAG_REGEX, '',
-                   re.sub(HANDLE_REGEX, '', tweet.text)))
+                          re.sub(HASHTAG_REGEX, '',
+                                 re.sub(HANDLE_REGEX, '', tweet.text)))
     return Tweet(
         tweet.user.screen_name,
         calendar.timegm(tweet.created_at.utctimetuple()),
