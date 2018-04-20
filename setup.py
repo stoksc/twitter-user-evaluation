@@ -9,6 +9,7 @@ setup(
         'gensim',
         'nltk',
         'numpy',
+        'rake_nltk',
         'sklearn',
         'tweepy',
     ],
