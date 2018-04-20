@@ -11,6 +11,8 @@ with open(os.path.join(os.getcwd(),
 
 '''
 import calendar
+import os
+import pickle
 import re
 import typing
 
@@ -26,6 +28,7 @@ URL_REGEX = r'https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+'
 class Tweet(typing.NamedTuple):
     ''' Tweet NamedTuple for easier access.
     '''
+    tweet_id: str
     screen_name: str
     time: int
     raw_text: str
@@ -52,6 +55,7 @@ def clean_tweet(tweet):
                           re.sub(HASHTAG_REGEX, '',
                                  re.sub(HANDLE_REGEX, '', tweet.text)))
     return Tweet(
+        tweet_id=tweet.id_str,
         screen_name=tweet.user.screen_name,
         time=calendar.timegm(tweet.created_at.utctimetuple()),
         raw_text=tweet.text,

@@ -8,6 +8,7 @@ setup(
         'flask',
         'gensim',
         'nltk',
+        'numpy',
         'sklearn',
         'tweepy',
     ],

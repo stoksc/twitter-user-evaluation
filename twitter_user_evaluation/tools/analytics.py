@@ -3,15 +3,25 @@
 from typing import List
 import operator
 
+from gensim.models import Doc2Vec
 from gensim.models import Word2Vec
+from gensim.models.doc2vec import TaggedDocument
 import nltk
+from nltk import RegexpTokenizer
+from nltk.corpus import stopwords
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk.tag import pos_tag
 import numpy as np
+from rake_nltk import Rake
+from sklearn.cluster import KMeans
 from sklearn.manifold import TSNE
+from sklearn.metrics import silhouette_score
 
 from .retrieval import Tweet
 
+
+TOKENIZER = RegexpTokenizer(r'\w+')
+STOPWORD_SET = set(stopwords.words('english'))
 
 nltk.download('vader_lexicon')
 nltk.download('averaged_perceptron_tagger')
@@ -19,8 +29,9 @@ nltk.download('averaged_perceptron_tagger')
 HSL1 = "hsl(280, 70%, 50%)"
 HSL2 = "hsl(15, 70%, 50%, 1)"
 HSL3 = "hsl(175, 70%, 50%, 1)"
-INTERVALS = 60
+INTERVALS = 15
 MODEL = SentimentIntensityAnalyzer()
+RAKE = Rake()
 
 
 def analyze_tweets(tweets: List[Tweet]):
@@ -35,7 +46,9 @@ def analyze_tweets(tweets: List[Tweet]):
         'volume_line_graph': volume_by_interval(tweets, INTERVALS),
         'radar_graph': sentiment_totals(tweets),
         'stream_graph': keywords_by_interval(tweets, INTERVALS),
-        'scatter_graph': generate_tsne_visualized_word_embedding(tweets)
+        'scatter_graph': generate_tsne_visualized_word_embedding(tweets),
+        # 'scatter_graph2': generate_tsne_visualized_doc_embedding(tweets),
+        'word_occurence_pie_graph': all_word_occurences(tweets),
     }
 
 
@@ -50,16 +63,17 @@ def related_hashtags(tweets: List[Tweet]):
     for tweet in tweets:
         for hashtag in tweet.hashtag_mentions:
             if hashtag in hashtag_occurences:
-                hashtag_occurences[hashtag] += 1
+                hashtag_occurences[hashtag][0] += 1
+                hashtag_occurences[hashtag][1].append(tweet.tweet_id)
             else:
-                hashtag_occurences[hashtag] = 1
-
+                hashtag_occurences[hashtag] = [1, [tweet.tweet_id]]
     return [{
         'id': hashtag,
         'label': hashtag,
         'value': occurences,
         'color': HSL1,
-        } for hashtag, occurences in hashtag_occurences.items()]
+        'tweet_ids': ids,
+        } for hashtag, (occurences, ids) in hashtag_occurences.items()]
 
 
 def related_users(tweets: List[Tweet]):
@@ -73,16 +87,17 @@ def related_users(tweets: List[Tweet]):
     for tweet in tweets:
         for screen_name in tweet.user_mentions:
             if screen_name in user_occurences:
-                user_occurences[screen_name] += 1
+                user_occurences[screen_name][0] += 1
+                user_occurences[screen_name][1].append(tweet.tweet_id)
             else:
-                user_occurences[screen_name] = 1
-
+                user_occurences[screen_name] = [1, [tweet.tweet_id]]
     return [{
         'id': user,
         'label': user,
         'value': occurences,
         'color': HSL1,
-        } for user, occurences in user_occurences.items()]
+        'tweet_ids': ids,
+        } for user, (occurences, ids) in user_occurences.items()]
 
 
 def sentiment_totals(tweets: List[Tweet]):
@@ -99,7 +114,6 @@ def sentiment_totals(tweets: List[Tweet]):
         neg_total += MODEL.polarity_scores(tweet.cleaned_text)['neg']
         pos_total += MODEL.polarity_scores(tweet.cleaned_text)['pos']
         neu_total += MODEL.polarity_scores(tweet.cleaned_text)['neu']
-
     return [
         {
             "type": "compound",
@@ -141,6 +155,7 @@ def volume_by_interval(tweets: List[Tweet], intervals: int):
     component.
         http://nivo.rocks/#/line
     '''
+
     favorites_by_interval = {
         'id': 'Favorites',
         'color': HSL1,
@@ -170,12 +185,12 @@ def volume_by_interval(tweets: List[Tweet], intervals: int):
             retweets_by_interval['data'].append({
                 'color': HSL2,
                 'x': str(current_interval - (interval_length / 2)),
-                'y': current_retweets_tally,
+                'y': current_favorites_tally,
             })
             totals_by_interval['data'].append({
                 'color': HSL3,
                 'x': str(current_interval - (interval_length / 2)),
-                'y': (current_favorites_tally + current_retweets_tally),
+                'y': current_favorites_tally,
             })
             current_interval += interval_length
             current_favorites_tally = current_retweets_tally = 0
@@ -218,7 +233,7 @@ def keywords_by_interval(tweets: List[Tweet], intervals: int):
     return all_keywords_by_interval
 
 
-def highest_keywords(tweets: List[Tweet], number_of_keywords=25):
+def highest_keywords(tweets: List[Tweet], number_of_keywords=6):
     ''' This function takes a tweets, rake them for keywords and determines the
     n strongest keywords from this document. pos=part of speech
     '''
@@ -285,3 +300,121 @@ def generate_tsne_visualized_word_embedding(tweets: List[Tweet]):
             'y': int(scale * np.float64(value[1])),
         }]} for index, (label, value) in enumerate(zip(vocab.keys(),
                                                        tsne_values))]
+
+
+def generate_tsne_visualized_doc_embedding(tweets: List[Tweet]):
+    ''' This function takes tweets and generates a doc2vec embedding from these
+    tweets. After this, it uses t-SNE to generate a visualization of the word
+    embedding to be displayed by this React component:
+        http://nivo.rocks/#/scatterplot/
+    '''
+    # preprocess data and train model
+    print('preprocess')
+    it = LabeledLineSentence({
+        tweet.time: tweet.cleaned_text for tweet in tweets
+    })
+    model = Doc2Vec(vector_size=125,
+                    min_count=0,
+                    alpha=0.025,
+                    min_alpha=0.025)
+    model.build_vocab(it)
+    for epoch in range(10):
+        print('iteration ' + str(epoch+1), end=' ')
+        model.train(it, total_examples=model.corpus_count, epochs=model.epochs)
+        model.alpha -= 0.002
+        model.min_alpha = model.alpha
+
+    # make 2d visualization
+    print('2d visualization')
+    tsne_model = TSNE(perplexity=40,
+                      n_components=2,
+                      init='pca',
+                      n_iter=100,
+                      random_state=23)
+    tsne_values = tsne_model.fit_transform(model.docvecs)
+
+    # find clusters
+    print('clustering')
+    scores = []
+    inertia_list = np.empty(8)
+    for i in range(2, 8):
+        kmeans = KMeans(n_clusters=i)
+        kmeans.fit(tsne_values)
+        inertia_list[i] = kmeans.inertia_
+        scores.append(silhouette_score(tsne_values, kmeans.labels_))
+    clusterer = KMeans(n_clusters=max(scores),
+                       random_state=50).fit(tsne_values)
+    centers = clusterer.cluster_centers_
+    c_preds = clusterer.predict(tsne_values)
+
+    # make chart
+    print('make chart')
+    scatter_chart = [{
+        'id': str(i),
+        'data': [],
+        } for i in range(len(centers))]
+    scale = max(max(tsne_values, key=lambda x: max(x)))
+    for tweet, tsne_value, group in zip(tweets, tsne_values, c_preds):
+        scatter_chart[str(group)]['data'].append({
+            'id': tweet.raw_text,
+            'x': int(scale * np.float64(tsne_value[0])),
+            'y': int(scale * np.float64(tsne_value[1])),
+        })
+    scatter_chart.append([{
+        'id': 'center',
+        'data': [{
+            'id': str(ci),
+            'x': int(scale * c[1]),
+            'y': int(scale * c[0]),
+        } for ci, c in enumerate(centers)]}])
+    return scatter_chart
+
+
+class LabeledLineSentence(object):
+    ''' This class is defined to take a dictionary of {text_title: text} and
+    yields TaggedDocuments for gensim.models.Doc2Vec to consume and train on.
+    '''
+    def __init__(self, corpus):
+        self.corpus = corpus
+
+    def __iter__(self):
+        for key, doc in self.corpus.items():
+            yield TaggedDocument(words=doc, tags=[key])
+
+    @staticmethod
+    def nlp_clean(data: List[str]):
+        ''' This method takes a list of texts and returns a list of lists of
+        tokens.
+        '''
+        tokenized_texts = []
+        for text in data:
+            new_str = text.lower()
+            tokenized_text = TOKENIZER.tokenize(new_str)
+            tokenized_text = list(set(tokenized_text).difference(STOPWORD_SET))
+            tokenized_texts.append(tokenized_text)
+        return tokenized_texts
+
+
+def all_word_occurences(tweets: List[Tweet]):
+    ''' Function takes a list of tweets and returns the hashtags that appear.
+
+    What it returns is a list of dictionaries that, when jsonified, renders as
+    this React comonent:
+        http://nivo.rocks/#/pie
+    '''
+    word_occurences = {}
+    for tweet in tweets:
+        cleaned_text = LabeledLineSentence.nlp_clean([tweet.raw_text])[0]
+        for word in cleaned_text:
+            if word in word_occurences:
+                word_occurences[word][0] += 1
+                word_occurences[word][1].append(tweet.tweet_id)
+            else:
+                word_occurences[word] = [1, [tweet.tweet_id]]
+    return [{
+        'id': word,
+        'label': word,
+        'value': occurences,
+        'color': HSL1,
+        'tweet_ids': ids,
+        } for word, (occurences, ids) in word_occurences.items()]
