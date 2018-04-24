@@ -48,7 +48,7 @@ def analyze_tweets(tweets: List[Tweet]):
         'stream_graph': keywords_by_interval(tweets, INTERVALS),
         'scatter_graph': generate_tsne_visualized_word_embedding(tweets),
         # 'scatter_graph2': generate_tsne_visualized_doc_embedding(tweets),
-        'word_occurence_pie_graph': all_word_occurences(tweets),
+        # 'word_occurence_pie_graph': all_word_occurences(tweets),
     }
 
 
@@ -185,12 +185,12 @@ def volume_by_interval(tweets: List[Tweet], intervals: int):
             retweets_by_interval['data'].append({
                 'color': HSL2,
                 'x': str(current_interval - (interval_length / 2)),
-                'y': current_favorites_tally,
+                'y': current_retweets_tally,
             })
             totals_by_interval['data'].append({
                 'color': HSL3,
                 'x': str(current_interval - (interval_length / 2)),
-                'y': current_favorites_tally,
+                'y': (current_favorites_tally + current_retweets_tally),
             })
             current_interval += interval_length
             current_favorites_tally = current_retweets_tally = 0
