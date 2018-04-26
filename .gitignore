@@ -10,6 +10,11 @@ __pycache__/
 export_keys.sh
 deployables
 .elasticbeanstalk
+*.csv
+*.zip
+*.6B
+*.ipynb
+venv
 
 # Distribution / packaging
 .Python
