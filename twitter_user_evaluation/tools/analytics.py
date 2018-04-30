@@ -11,6 +11,7 @@ import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 from nltk import ne_chunk, pos_tag, word_tokenize
 from nltk.tree import Tree
+import numpy as np
 
 from .retrieval import Tweet
 
@@ -38,7 +39,7 @@ MAX_SEQUENCE_LENGTH = 1000
 with open(POL_MODEL_TKNZR_PATH, 'rb') as handle:
     POL_MODEL_TKNZR = pickle.load(handle)
 POL_MODEL = load_model(POL_MODEL_PATH)
-
+POL_MODEL.predict(np.zeros((1, MAX_SEQUENCE_LENGTH)))
 
 def analyze_tweets(tweets: List[Tweet]):
     ''' This function takes a group of tweets and returns statistics
@@ -212,6 +213,7 @@ def political_sentiment_scatter(tweets: List[Tweet]):
     sequences = POL_MODEL_TKNZR.texts_to_sequences(
         [tweet.raw_text for tweet in tweets])
     sequences = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
+    global POL_MODEL
     preds = POL_MODEL.predict(sequences)
     return [{
         'id': tweet.raw_text,
