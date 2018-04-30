@@ -33,24 +33,8 @@
                 0
               ]
             },
-            "x": {
-              "$id": "http://example.com/example.json/items/properties/data/items/properties/x",
-              "type": "integer",
-              "title": "The X Schema ",
-              "default": 0,
-              "examples": [
-                74
-              ]
-       },
-            "y": {
-              "$id": "http://example.com/example.json/items/properties/data/items/properties/y",
-              "type": "integer",
-              "title": "The Y Schema ",
-              "default": 0,
-              "examples": [
-                46
-              ]
-            }
+            "x": {},
+            "y": {}
           }
         }
       }
