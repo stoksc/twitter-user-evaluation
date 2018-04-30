@@ -7,12 +7,8 @@ setup(
     install_requires=[
         'tensorflow',
         'flask',
-        'gensim',
         'keras',
         'nltk',
-        'numpy',
-        'rake_nltk',
-        'sklearn',
         'tweepy',
     ],
     setup_requires=[

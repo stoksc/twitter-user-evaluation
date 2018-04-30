@@ -2,28 +2,15 @@
 '''
 import datetime
 from typing import List
-import operator
 import os
 import pickle
 
 from keras.models import load_model
-from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
-from gensim.models import Doc2Vec
-from gensim.models import Word2Vec
-from gensim.models.doc2vec import TaggedDocument
 import nltk
-from nltk import RegexpTokenizer
-from nltk.corpus import stopwords
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
-from nltk.tag import pos_tag
 from nltk import ne_chunk, pos_tag, word_tokenize
 from nltk.tree import Tree
-import numpy as np
-from rake_nltk import Rake
-from sklearn.cluster import KMeans
-from sklearn.manifold import TSNE
-from sklearn.metrics import silhouette_score
 
 from .retrieval import Tweet
 
@@ -43,10 +30,7 @@ nltk.download('vader_lexicon')
 nltk.download('averaged_perceptron_tagger')
 nltk.download('maxent_ne_chunker')
 nltk.download('words')
-TOKENIZER = RegexpTokenizer(r'\w+')
-STOPWORD_SET = set(stopwords.words('english'))
 MODEL = SentimentIntensityAnalyzer()
-RAKE = Rake()
 
 # keras political sentiment model
 MAX_SEQUENCE_LENGTH = 1000
@@ -130,7 +114,6 @@ def volume_by_interval(tweets: List[Tweet], intervals: int):
     component.
         http://nivo.rocks/#/line
     '''
-
     favorites_by_interval = {'id': 'Favorites', 'color': HSL1, 'data': []}
     retweets_by_interval = {'id': 'Retweets', 'color': HSL2, 'data': []}
     totals_by_interval = {'id': 'Totals', 'color': HSL3, 'data': []}
@@ -202,14 +185,14 @@ def parse_ne_chunk(text):
     ''' Takes texts and finds the named entities
 
     why write it when it's already there.
-    credit: https://stackoverflow.com/questions/31836058/nltk-named-entity-recognition-to-a-python-list
+    credit on so:
+        /questions/31836058/nltk-named-entity-recognition-to-a-python-list
     '''
     chunked = ne_chunk(pos_tag(word_tokenize(text)))
-    prev = None
     continuous_chunk = []
     current_chunk = []
     for i in chunked:
-        if type(i) == Tree:
+        if isinstance(i, Tree):
             current_chunk.append(" ".join([token for token, pos in i.leaves()]))
         elif current_chunk:
             named_entity = " ".join(current_chunk)
