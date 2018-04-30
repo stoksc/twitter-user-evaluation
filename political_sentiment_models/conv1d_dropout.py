@@ -2,8 +2,10 @@
 '''
 from __future__ import print_function
 
+import pickle
 import os
 import sys
+
 import numpy as np
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
@@ -13,7 +15,7 @@ from keras.layers import Dense, Input, GlobalMaxPooling1D, Conv1D, \
 from keras.models import Model
 from keras.models import model_from_json
 
-from preprocess_data import get_data
+from preprocess_data import get_data, get_debate_data
 
 
 BASE_DIR = ''
@@ -22,10 +24,11 @@ GLOVE_DIR = os.path.join(BASE_DIR, 'glove.6B')
 MAX_SEQUENCE_LENGTH = 1000
 MAX_NUM_WORDS = 20000
 EMBEDDING_DIM = 100
-VALIDATION_SPLIT = 0.2
+VALIDATION_SPLIT = 0.05
+
 
 print('gather data')
-texts, labels = get_data()
+texts, labels = get_debate_data()
 
 print('vectorizing texts')
 tokenizer = Tokenizer(num_words=MAX_NUM_WORDS)
@@ -35,6 +38,7 @@ sequences = tokenizer.texts_to_sequences(texts)
 print('preparing data')
 data = pad_sequences(sequences, maxlen=MAX_SEQUENCE_LENGTH)
 labels = to_categorical(np.asarray(labels))
+print(labels)
 print('Shape of data tensor:', data.shape)
 print('Shape of label tensor:', labels.shape)
 
@@ -44,14 +48,10 @@ np.random.shuffle(indices)
 data = data[indices]
 labels = labels[indices]
 num_validation_samples = int(VALIDATION_SPLIT * data.shape[0])
-# x_train = data[:-num_validation_samples]
-# y_train = labels[:-num_validation_samples]
-# x_val = data[-num_validation_samples:]
-# y_val = labels[-num_validation_samples:]
-x_train = data[:5000]
-y_train = labels[:5000]
-x_val = data[5000:5500]
-y_val = labels[5000:5500]
+x_train = data[:-num_validation_samples]
+y_train = labels[:-num_validation_samples]
+x_val = data[-num_validation_samples:]
+y_val = labels[-num_validation_samples:]
 
 print('prepare model')
 sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32')
@@ -72,14 +72,14 @@ model.compile(loss='categorical_crossentropy',
               optimizer='rmsprop',
               metrics=['acc'])
 
-print('train model')
+print('training model')
 model.fit(x_train, y_train,
           batch_size=128,
-          epochs=10,
-validation_data=(x_val, y_val))
+          epochs=6,
+          validation_data=(x_val, y_val))
 
 print('saving model')
-model_json = model.to_json()
-with open(os.path.join(TRAINED_MODELS_DIR, "conv_dropout.json"), "w") as f:
-    f.write(model_json)
-model.save_weights(os.path.join(TRAINED_MODELS_DIR, "conv_dropout.h5"))
+with open(os.path.join(TRAINED_MODELS_DIR, 'cdo_tknzr.pickle'), 'wb') as handle:
+    pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+model.save(os.path.join(TRAINED_MODELS_DIR, "conv_dropout_model.h5"))

@@ -2,6 +2,7 @@
 '''
 from __future__ import print_function
 
+import pickle
 import os
 import sys
 
@@ -9,12 +10,12 @@ import numpy as np
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
 from keras.utils import to_categorical
-from keras.layers import Dense, Input, GlobalMaxPooling1D
-from keras.layers import Conv1D, MaxPooling1D, Embedding, Flatten, Dropout
+from keras.layers import Dense, Input, GlobalMaxPooling1D, Conv1D, \
+    MaxPooling1D, Embedding, Flatten, Dropout
 from keras.models import Model
 from keras.models import model_from_json
 
-from preprocess_data import get_data
+from preprocess_data import get_data, get_debate_data
 
 
 BASE_DIR = ''
@@ -27,7 +28,7 @@ VALIDATION_SPLIT = 0.2
 
 
 print('gather data')
-texts, labels = get_data()
+texts, labels = get_debate_data()
 
 print('vectorizing texts')
 tokenizer = Tokenizer(num_words=MAX_NUM_WORDS)
@@ -46,14 +47,10 @@ np.random.shuffle(indices)
 data = data[indices]
 labels = labels[indices]
 num_validation_samples = int(VALIDATION_SPLIT * data.shape[0])
-# x_train = data[:-num_validation_samples]
-# y_train = labels[:-num_validation_samples]
-# x_val = data[-num_validation_samples:]
-# y_val = labels[-num_validation_samples:]
-x_train = data[:5000]
-y_train = labels[:5000]
-x_val = data[5000:5500]
-y_val = labels[5000:5500]
+x_train = data[:-num_validation_samples]
+y_train = labels[:-num_validation_samples]
+x_val = data[-num_validation_samples:]
+y_val = labels[-num_validation_samples:]
 
 print('preparing model')
 sequence_input = Input(shape=(MAX_SEQUENCE_LENGTH,), dtype='int32')
@@ -81,7 +78,11 @@ model.fit(x_train, y_train,
           validation_data=(x_val, y_val))
 
 print('saving model')
+with open(os.path.join(TRAINED_MODELS_DIR, 'cmp_tknzr.pickle'), 'wb') as handle:
+    pickle.dump(tokenizer, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
 model_json = model.to_json()
 with open(os.path.join(TRAINED_MODELS_DIR, "conv_gmp_model.json"), "w") as f:
     f.write(model_json)
+
 model.save_weights(os.path.join(TRAINED_MODELS_DIR, "conv_gmp_model.h5"))

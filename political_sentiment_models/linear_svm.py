@@ -9,8 +9,9 @@ from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.linear_model import SGDClassifier
 
 
-VALIDATION_SPLIT = 0.2
+BASE_DIR = ''
 TRAINED_MODELS_DIR = os.path.join(BASE_DIR, 'trained_models')
+VALIDATION_SPLIT = 0.2
 
 
 print('gather data and train-val split')

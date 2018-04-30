@@ -8,8 +8,11 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
 
-VALIDATION_SPLIT = 0.2
+
+BASE_DIR = ''
 TRAINED_MODELS_DIR = os.path.join(BASE_DIR, 'trained_models')
+VALIDATION_SPLIT = 0.2
+
 
 print('gather data and train-val split')
 texts, labels = get_data(clean_stopwords=True, lemmatize=True)

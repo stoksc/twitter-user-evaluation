@@ -14,7 +14,11 @@ deployables
 *.zip
 *.6B
 *.ipynb
+texts.pickle
+labels.pickle
 venv
+raw_debate_texts
+
 
 # Distribution / packaging
 .Python

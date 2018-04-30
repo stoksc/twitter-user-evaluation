@@ -7,6 +7,7 @@ setup(
     install_requires=[
         'flask',
         'gensim',
+        'keras',
         'nltk',
         'numpy',
         'rake_nltk',

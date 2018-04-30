@@ -10,5 +10,7 @@ EXPOSE 80
 
 ENV FLASK_APP twitter_user_evaluation
 ENV FLASK_DEBUG false
+ENV FLASK_THREADED false
+
 
 CMD ["flask", "run", "--host=0.0.0.0", "--port=80"]
