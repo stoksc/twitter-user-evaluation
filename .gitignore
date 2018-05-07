@@ -13,7 +13,6 @@ deployables
 *.csv
 *.zip
 *.6B
-*.ipynb
 texts.pickle
 labels.pickle
 venv

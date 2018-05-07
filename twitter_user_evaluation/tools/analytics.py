@@ -26,6 +26,7 @@ POL_MODEL_DIR = os.path.join('twitter_user_evaluation', 'tools', 'models')
 POL_MODEL_TKNZR_PATH = os.path.join(POL_MODEL_DIR, 'cdo_tknzr.pickle')
 POL_MODEL_PATH = os.path.join(POL_MODEL_DIR, 'conv_dropout_model.h5')
 
+
 # nltk tools and models
 nltk.download('vader_lexicon')
 nltk.download('averaged_perceptron_tagger')
@@ -40,6 +41,7 @@ with open(POL_MODEL_TKNZR_PATH, 'rb') as handle:
     POL_MODEL_TKNZR = pickle.load(handle)
 POL_MODEL = load_model(POL_MODEL_PATH)
 POL_MODEL.predict(np.zeros((1, MAX_SEQUENCE_LENGTH)))
+
 
 def analyze_tweets(tweets: List[Tweet]):
     ''' This function takes a group of tweets and returns statistics
@@ -219,6 +221,6 @@ def political_sentiment_scatter(tweets: List[Tweet]):
         'id': tweet.raw_text,
         'data': [{
             'id': i,
-            'x': popularity(tweet),
-            'y': float(pol_sent[1]),
+            'y': popularity(tweet),
+            'x': float(pol_sent[1]),
         }]} for i, (tweet, pol_sent) in enumerate(zip(tweets, preds))]
