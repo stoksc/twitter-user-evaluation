@@ -1,0 +1,304 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>twitter_user_evaluation.tools package &#8212; twitter-user-evaluation 0.0.1 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="twitter_user_evaluation package" href="twitter_user_evaluation.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="twitter-user-evaluation-tools-package">
+<h1>twitter_user_evaluation.tools package<a class="headerlink" href="#twitter-user-evaluation-tools-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-twitter_user_evaluation.tools.analytics">
+<span id="twitter-user-evaluation-tools-analytics-module"></span><h2>twitter_user_evaluation.tools.analytics module<a class="headerlink" href="#module-twitter_user_evaluation.tools.analytics" title="Permalink to this headline">¶</a></h2>
+<p>This module provides functions for analyzing tweets.</p>
+<dl class="function">
+<dt id="twitter_user_evaluation.tools.analytics.all_ne_occurences">
+<code class="descclassname">twitter_user_evaluation.tools.analytics.</code><code class="descname">all_ne_occurences</code><span class="sig-paren">(</span><em>tweets: List[twitter_user_evaluation.tools.retrieval.Tweet]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/twitter_user_evaluation/tools/analytics.html#all_ne_occurences"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.analytics.all_ne_occurences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function takes a list of tweets and returns the hashtags that appear.</p>
+<p>What it returns is a list of dictionaries that, when jsonified, renders as
+this React comonent:</p>
+<blockquote>
+<div><a class="reference external" href="http://nivo.rocks/#/bar">http://nivo.rocks/#/bar</a></div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="twitter_user_evaluation.tools.analytics.analyze_tweets">
+<code class="descclassname">twitter_user_evaluation.tools.analytics.</code><code class="descname">analyze_tweets</code><span class="sig-paren">(</span><em>tweets: List[twitter_user_evaluation.tools.retrieval.Tweet]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/twitter_user_evaluation/tools/analytics.html#analyze_tweets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.analytics.analyze_tweets" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function takes a group of tweets and returns statistics
+on them like average sentiment and related hashtags.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="twitter_user_evaluation.tools.analytics.parse_ne_chunk">
+<code class="descclassname">twitter_user_evaluation.tools.analytics.</code><code class="descname">parse_ne_chunk</code><span class="sig-paren">(</span><em>text</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/twitter_user_evaluation/tools/analytics.html#parse_ne_chunk"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.analytics.parse_ne_chunk" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes texts and finds the named entities</p>
+<p>why write it when it’s already there.
+credit on so:</p>
+<blockquote>
+<div>/questions/31836058/nltk-named-entity-recognition-to-a-python-list</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="twitter_user_evaluation.tools.analytics.political_sentiment_scatter">
+<code class="descclassname">twitter_user_evaluation.tools.analytics.</code><code class="descname">political_sentiment_scatter</code><span class="sig-paren">(</span><em>tweets: List[twitter_user_evaluation.tools.retrieval.Tweet]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/twitter_user_evaluation/tools/analytics.html#political_sentiment_scatter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.analytics.political_sentiment_scatter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function takes a list of tweets and returns a bunch of data. It’s the
+sentiment, polarity and political sentiment of the tweets but organized in
+a strange way so that when jsonified, it renders as this React component:</p>
+<blockquote>
+<div><a class="reference external" href="http://nivo.rocks/#/scatterplot/">http://nivo.rocks/#/scatterplot/</a></div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="twitter_user_evaluation.tools.analytics.popularity">
+<code class="descclassname">twitter_user_evaluation.tools.analytics.</code><code class="descname">popularity</code><span class="sig-paren">(</span><em>tweet: twitter_user_evaluation.tools.retrieval.Tweet</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/twitter_user_evaluation/tools/analytics.html#popularity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.analytics.popularity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function takes a tweet and returns how popular the tweet is.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="twitter_user_evaluation.tools.analytics.related_hashtags">
+<code class="descclassname">twitter_user_evaluation.tools.analytics.</code><code class="descname">related_hashtags</code><span class="sig-paren">(</span><em>tweets: List[twitter_user_evaluation.tools.retrieval.Tweet]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/twitter_user_evaluation/tools/analytics.html#related_hashtags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.analytics.related_hashtags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function takes a list of tweets and returns the hashtags that appear.</p>
+<p>What it returns is a list of dictionaries that, when jsonified, renders as
+this React comonent:</p>
+<blockquote>
+<div><a class="reference external" href="http://nivo.rocks/#/pie">http://nivo.rocks/#/pie</a></div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="twitter_user_evaluation.tools.analytics.related_users">
+<code class="descclassname">twitter_user_evaluation.tools.analytics.</code><code class="descname">related_users</code><span class="sig-paren">(</span><em>tweets: List[twitter_user_evaluation.tools.retrieval.Tweet]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/twitter_user_evaluation/tools/analytics.html#related_users"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.analytics.related_users" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function takes a list of tweets and returns the users that appear.</p>
+<p>What it returns is a list of dictionaries that, when jsonified, renders as
+this React comonent:</p>
+<blockquote>
+<div><a class="reference external" href="http://nivo.rocks/#/pie">http://nivo.rocks/#/pie</a></div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="twitter_user_evaluation.tools.analytics.volume_by_interval">
+<code class="descclassname">twitter_user_evaluation.tools.analytics.</code><code class="descname">volume_by_interval</code><span class="sig-paren">(</span><em>tweets: List[twitter_user_evaluation.tools.retrieval.Tweet], intervals: int</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/twitter_user_evaluation/tools/analytics.html#volume_by_interval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.analytics.volume_by_interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function takes a list of tweets and locates the newest and oldest
+tweets in the bunch. It then breaks the length of time between these into
+intervals and returns the average sentiment of tweets per interval.</p>
+<p>What it returns is a dictionary that, when jsonified renders this React
+component.</p>
+<blockquote>
+<div><a class="reference external" href="http://nivo.rocks/#/line">http://nivo.rocks/#/line</a></div></blockquote>
+</dd></dl>
+
+</div>
+<div class="section" id="module-twitter_user_evaluation.tools.default_responses">
+<span id="twitter-user-evaluation-tools-default-responses-module"></span><h2>twitter_user_evaluation.tools.default_responses module<a class="headerlink" href="#module-twitter_user_evaluation.tools.default_responses" title="Permalink to this headline">¶</a></h2>
+<p>This module defines the default responses the flask app can respond with.</p>
+</div>
+<div class="section" id="module-twitter_user_evaluation.tools.flasks">
+<span id="twitter-user-evaluation-tools-flasks-module"></span><h2>twitter_user_evaluation.tools.flasks module<a class="headerlink" href="#module-twitter_user_evaluation.tools.flasks" title="Permalink to this headline">¶</a></h2>
+<p>This module defines an extension of the default Flask.</p>
+<dl class="class">
+<dt id="twitter_user_evaluation.tools.flasks.FlaskWithTwitterAPI">
+<em class="property">class </em><code class="descclassname">twitter_user_evaluation.tools.flasks.</code><code class="descname">FlaskWithTwitterAPI</code><span class="sig-paren">(</span><em>import_name</em>, <em>twitter_consumer_key=None</em>, <em>twitter_consumer_secret=None</em>, <em>twitter_access_token=None</em>, <em>twitter_access_token_secret=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/twitter_user_evaluation/tools/flasks.html#FlaskWithTwitterAPI"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.flasks.FlaskWithTwitterAPI" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">flask.app.Flask</span></code></p>
+<p>This class just extends flask.Flask while holding the connection to the
+Twitter API to keep ../app.py a little cleaner.</p>
+<dl class="method">
+<dt id="twitter_user_evaluation.tools.flasks.FlaskWithTwitterAPI.check_api_status">
+<code class="descname">check_api_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/twitter_user_evaluation/tools/flasks.html#FlaskWithTwitterAPI.check_api_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.flasks.FlaskWithTwitterAPI.check_api_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>This method checks the status of the connection to Twitter’s API.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-twitter_user_evaluation.tools.retrieval">
+<span id="twitter-user-evaluation-tools-retrieval-module"></span><h2>twitter_user_evaluation.tools.retrieval module<a class="headerlink" href="#module-twitter_user_evaluation.tools.retrieval" title="Permalink to this headline">¶</a></h2>
+<p>This module provides functions that use a tweepy api to returns tweets by a
+user.</p>
+<p>Snippet to store the data from as a test file:</p>
+<dl class="docutils">
+<dt>with open(os.path.join(os.getcwd(),</dt>
+<dd><blockquote class="first">
+<div>‘tests’,
+‘test_data’,
+‘{}_data.pickle’.format(screen_name)), ‘wb’) as outfile:</div></blockquote>
+<p class="last">pickle.dump([clean_tweet(tweet) for tweet in tweets], outfile)</p>
+</dd>
+</dl>
+<dl class="class">
+<dt id="twitter_user_evaluation.tools.retrieval.Tweet">
+<em class="property">class </em><code class="descclassname">twitter_user_evaluation.tools.retrieval.</code><code class="descname">Tweet</code><a class="reference internal" href="_modules/twitter_user_evaluation/tools/retrieval.html#Tweet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.retrieval.Tweet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
+<p>Tweet NamedTuple for easier access.</p>
+<dl class="attribute">
+<dt id="twitter_user_evaluation.tools.retrieval.Tweet.cleaned_text">
+<code class="descname">cleaned_text</code><a class="headerlink" href="#twitter_user_evaluation.tools.retrieval.Tweet.cleaned_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 4</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="twitter_user_evaluation.tools.retrieval.Tweet.favorites">
+<code class="descname">favorites</code><a class="headerlink" href="#twitter_user_evaluation.tools.retrieval.Tweet.favorites" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 8</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="twitter_user_evaluation.tools.retrieval.Tweet.hashtag_mentions">
+<code class="descname">hashtag_mentions</code><a class="headerlink" href="#twitter_user_evaluation.tools.retrieval.Tweet.hashtag_mentions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 5</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="twitter_user_evaluation.tools.retrieval.Tweet.raw_text">
+<code class="descname">raw_text</code><a class="headerlink" href="#twitter_user_evaluation.tools.retrieval.Tweet.raw_text" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 3</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="twitter_user_evaluation.tools.retrieval.Tweet.retweets">
+<code class="descname">retweets</code><a class="headerlink" href="#twitter_user_evaluation.tools.retrieval.Tweet.retweets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 7</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="twitter_user_evaluation.tools.retrieval.Tweet.screen_name">
+<code class="descname">screen_name</code><a class="headerlink" href="#twitter_user_evaluation.tools.retrieval.Tweet.screen_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 1</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="twitter_user_evaluation.tools.retrieval.Tweet.time">
+<code class="descname">time</code><a class="headerlink" href="#twitter_user_evaluation.tools.retrieval.Tweet.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 2</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="twitter_user_evaluation.tools.retrieval.Tweet.tweet_id">
+<code class="descname">tweet_id</code><a class="headerlink" href="#twitter_user_evaluation.tools.retrieval.Tweet.tweet_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 0</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="twitter_user_evaluation.tools.retrieval.Tweet.user_mentions">
+<code class="descname">user_mentions</code><a class="headerlink" href="#twitter_user_evaluation.tools.retrieval.Tweet.user_mentions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Alias for field number 6</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="twitter_user_evaluation.tools.retrieval.clean_tweet">
+<code class="descclassname">twitter_user_evaluation.tools.retrieval.</code><code class="descname">clean_tweet</code><span class="sig-paren">(</span><em>tweet</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/twitter_user_evaluation/tools/retrieval.html#clean_tweet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.retrieval.clean_tweet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Takes a tweepy tweet object and returns a dictionary that contains
+the information from the tweet that we actually need.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="twitter_user_evaluation.tools.retrieval.get_tweets_from_user">
+<code class="descclassname">twitter_user_evaluation.tools.retrieval.</code><code class="descname">get_tweets_from_user</code><span class="sig-paren">(</span><em>screen_name: str</em>, <em>api</em>, <em>count=200</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/twitter_user_evaluation/tools/retrieval.html#get_tweets_from_user"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#twitter_user_evaluation.tools.retrieval.get_tweets_from_user" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receives a screen name to query and a tweepy api object. Uses this
+information to return tweets from this user.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-twitter_user_evaluation.tools">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-twitter_user_evaluation.tools" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">twitter_user_evaluation.tools package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-twitter_user_evaluation.tools.analytics">twitter_user_evaluation.tools.analytics module</a></li>
+<li><a class="reference internal" href="#module-twitter_user_evaluation.tools.default_responses">twitter_user_evaluation.tools.default_responses module</a></li>
+<li><a class="reference internal" href="#module-twitter_user_evaluation.tools.flasks">twitter_user_evaluation.tools.flasks module</a></li>
+<li><a class="reference internal" href="#module-twitter_user_evaluation.tools.retrieval">twitter_user_evaluation.tools.retrieval module</a></li>
+<li><a class="reference internal" href="#module-twitter_user_evaluation.tools">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  <li><a href="modules.html">twitter_user_evaluation</a><ul>
+  <li><a href="twitter_user_evaluation.html">twitter_user_evaluation package</a><ul>
+      <li>Previous: <a href="twitter_user_evaluation.html" title="previous chapter">twitter_user_evaluation package</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/twitter_user_evaluation.tools.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Bradley Laney.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+      |
+      <a href="_sources/twitter_user_evaluation.tools.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

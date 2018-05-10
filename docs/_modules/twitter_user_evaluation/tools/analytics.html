@@ -1,0 +1,304 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>twitter_user_evaluation.tools.analytics &#8212; twitter-user-evaluation 0.0.1 documentation</title>
+    <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" src="../../../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for twitter_user_evaluation.tools.analytics</h1><div class="highlight"><pre>
+<span></span><span class="sd">&#39;&#39;&#39; This module provides functions for analyzing tweets.</span>
+<span class="sd">&#39;&#39;&#39;</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="k">import</span> <span class="n">List</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+
+<span class="kn">from</span> <span class="nn">keras.models</span> <span class="k">import</span> <span class="n">load_model</span>
+<span class="kn">from</span> <span class="nn">keras.preprocessing.sequence</span> <span class="k">import</span> <span class="n">pad_sequences</span>
+<span class="kn">import</span> <span class="nn">nltk</span>
+<span class="kn">from</span> <span class="nn">nltk.sentiment.vader</span> <span class="k">import</span> <span class="n">SentimentIntensityAnalyzer</span>
+<span class="kn">from</span> <span class="nn">nltk</span> <span class="k">import</span> <span class="n">ne_chunk</span><span class="p">,</span> <span class="n">pos_tag</span><span class="p">,</span> <span class="n">word_tokenize</span>
+<span class="kn">from</span> <span class="nn">nltk.tree</span> <span class="k">import</span> <span class="n">Tree</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">.retrieval</span> <span class="k">import</span> <span class="n">Tweet</span>
+
+
+<span class="c1"># constants and file paths</span>
+<span class="n">HSL1</span> <span class="o">=</span> <span class="s2">&quot;hsl(280, 70%, 50%)&quot;</span>
+<span class="n">HSL2</span> <span class="o">=</span> <span class="s2">&quot;hsl(15, 70%, 50%, 1)&quot;</span>
+<span class="n">HSL3</span> <span class="o">=</span> <span class="s2">&quot;hsl(175, 70%, 50%, 1)&quot;</span>
+<span class="n">INTERVALS</span> <span class="o">=</span> <span class="mi">15</span>
+<span class="n">MAX_BAR_FIELDS</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">POL_MODEL_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s1">&#39;twitter_user_evaluation&#39;</span><span class="p">,</span> <span class="s1">&#39;tools&#39;</span><span class="p">,</span> <span class="s1">&#39;models&#39;</span><span class="p">)</span>
+<span class="n">POL_MODEL_TKNZR_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">POL_MODEL_DIR</span><span class="p">,</span> <span class="s1">&#39;cdo_tknzr.pickle&#39;</span><span class="p">)</span>
+<span class="n">POL_MODEL_PATH</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">POL_MODEL_DIR</span><span class="p">,</span> <span class="s1">&#39;conv_dropout_model.h5&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># nltk tools and models</span>
+<span class="n">nltk</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s1">&#39;vader_lexicon&#39;</span><span class="p">)</span>
+<span class="n">nltk</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s1">&#39;averaged_perceptron_tagger&#39;</span><span class="p">)</span>
+<span class="n">nltk</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s1">&#39;maxent_ne_chunker&#39;</span><span class="p">)</span>
+<span class="n">nltk</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s1">&#39;words&#39;</span><span class="p">)</span>
+<span class="n">nltk</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s1">&#39;punkt&#39;</span><span class="p">)</span>
+<span class="n">MODEL</span> <span class="o">=</span> <span class="n">SentimentIntensityAnalyzer</span><span class="p">()</span>
+
+<span class="c1"># keras political sentiment model</span>
+<span class="n">MAX_SEQUENCE_LENGTH</span> <span class="o">=</span> <span class="mi">1000</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">POL_MODEL_TKNZR_PATH</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+    <span class="n">POL_MODEL_TKNZR</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+<span class="n">POL_MODEL</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">POL_MODEL_PATH</span><span class="p">)</span>
+<span class="n">POL_MODEL</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">MAX_SEQUENCE_LENGTH</span><span class="p">)))</span>
+
+
+<div class="viewcode-block" id="analyze_tweets"><a class="viewcode-back" href="../../../twitter_user_evaluation.tools.html#twitter_user_evaluation.tools.analytics.analyze_tweets">[docs]</a><span class="k">def</span> <span class="nf">analyze_tweets</span><span class="p">(</span><span class="n">tweets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tweet</span><span class="p">]):</span>
+    <span class="sd">&#39;&#39;&#39; This function takes a group of tweets and returns statistics</span>
+<span class="sd">    on them like average sentiment and related hashtags.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s1">&#39;related_hashtag&#39;</span><span class="p">:</span> <span class="n">related_hashtags</span><span class="p">(</span><span class="n">tweets</span><span class="p">),</span>
+        <span class="s1">&#39;related_user&#39;</span><span class="p">:</span> <span class="n">related_users</span><span class="p">(</span><span class="n">tweets</span><span class="p">),</span>
+        <span class="s1">&#39;volume_line_graph&#39;</span><span class="p">:</span> <span class="n">volume_by_interval</span><span class="p">(</span><span class="n">tweets</span><span class="p">,</span> <span class="n">INTERVALS</span><span class="p">),</span>
+        <span class="s1">&#39;scatter_graph&#39;</span><span class="p">:</span> <span class="n">political_sentiment_scatter</span><span class="p">(</span><span class="n">tweets</span><span class="p">),</span>
+        <span class="s1">&#39;named_entity_bar_graph&#39;</span><span class="p">:</span> <span class="n">all_ne_occurences</span><span class="p">(</span><span class="n">tweets</span><span class="p">)}</span></div>
+
+
+<div class="viewcode-block" id="related_hashtags"><a class="viewcode-back" href="../../../twitter_user_evaluation.tools.html#twitter_user_evaluation.tools.analytics.related_hashtags">[docs]</a><span class="k">def</span> <span class="nf">related_hashtags</span><span class="p">(</span><span class="n">tweets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tweet</span><span class="p">]):</span>
+    <span class="sd">&#39;&#39;&#39; Function takes a list of tweets and returns the hashtags that appear.</span>
+
+<span class="sd">    What it returns is a list of dictionaries that, when jsonified, renders as</span>
+<span class="sd">    this React comonent:</span>
+<span class="sd">        http://nivo.rocks/#/pie</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">hashtag_occurences</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">tweet</span> <span class="ow">in</span> <span class="n">tweets</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">hashtag</span> <span class="ow">in</span> <span class="n">tweet</span><span class="o">.</span><span class="n">hashtag_mentions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">hashtag</span> <span class="ow">in</span> <span class="n">hashtag_occurences</span><span class="p">:</span>
+                <span class="n">hashtag_occurences</span><span class="p">[</span><span class="n">hashtag</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">hashtag_occurences</span><span class="p">[</span><span class="n">hashtag</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tweet</span><span class="o">.</span><span class="n">tweet_id</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hashtag_occurences</span><span class="p">[</span><span class="n">hashtag</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="n">tweet</span><span class="o">.</span><span class="n">tweet_id</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="p">[{</span>
+        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">hashtag</span><span class="p">,</span>
+        <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="n">hashtag</span><span class="p">,</span>
+        <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">occurences</span><span class="p">,</span>
+        <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">HSL1</span><span class="p">,</span>
+        <span class="s1">&#39;tweet_ids&#39;</span><span class="p">:</span> <span class="n">ids</span><span class="p">,</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="n">hashtag</span><span class="p">,</span> <span class="p">(</span><span class="n">occurences</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span> <span class="ow">in</span> <span class="n">hashtag_occurences</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span></div>
+
+
+<div class="viewcode-block" id="related_users"><a class="viewcode-back" href="../../../twitter_user_evaluation.tools.html#twitter_user_evaluation.tools.analytics.related_users">[docs]</a><span class="k">def</span> <span class="nf">related_users</span><span class="p">(</span><span class="n">tweets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tweet</span><span class="p">]):</span>
+    <span class="sd">&#39;&#39;&#39; Function takes a list of tweets and returns the users that appear.</span>
+
+<span class="sd">    What it returns is a list of dictionaries that, when jsonified, renders as</span>
+<span class="sd">    this React comonent:</span>
+<span class="sd">        http://nivo.rocks/#/pie</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">user_occurences</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">tweet</span> <span class="ow">in</span> <span class="n">tweets</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">screen_name</span> <span class="ow">in</span> <span class="n">tweet</span><span class="o">.</span><span class="n">user_mentions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">screen_name</span> <span class="ow">in</span> <span class="n">user_occurences</span><span class="p">:</span>
+                <span class="n">user_occurences</span><span class="p">[</span><span class="n">screen_name</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">user_occurences</span><span class="p">[</span><span class="n">screen_name</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tweet</span><span class="o">.</span><span class="n">tweet_id</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">user_occurences</span><span class="p">[</span><span class="n">screen_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="p">[</span><span class="n">tweet</span><span class="o">.</span><span class="n">tweet_id</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="p">[{</span>
+        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">user</span><span class="p">,</span>
+        <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="n">user</span><span class="p">,</span>
+        <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">occurences</span><span class="p">,</span>
+        <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">HSL1</span><span class="p">,</span>
+        <span class="s1">&#39;tweet_ids&#39;</span><span class="p">:</span> <span class="n">ids</span><span class="p">,</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="n">user</span><span class="p">,</span> <span class="p">(</span><span class="n">occurences</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span> <span class="ow">in</span> <span class="n">user_occurences</span><span class="o">.</span><span class="n">items</span><span class="p">()]</span></div>
+
+
+<div class="viewcode-block" id="popularity"><a class="viewcode-back" href="../../../twitter_user_evaluation.tools.html#twitter_user_evaluation.tools.analytics.popularity">[docs]</a><span class="k">def</span> <span class="nf">popularity</span><span class="p">(</span><span class="n">tweet</span><span class="p">:</span> <span class="n">Tweet</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Function takes a tweet and returns how popular the tweet is.</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">return</span> <span class="n">tweet</span><span class="o">.</span><span class="n">favorites</span> <span class="o">+</span> <span class="n">tweet</span><span class="o">.</span><span class="n">retweets</span></div>
+
+
+<div class="viewcode-block" id="volume_by_interval"><a class="viewcode-back" href="../../../twitter_user_evaluation.tools.html#twitter_user_evaluation.tools.analytics.volume_by_interval">[docs]</a><span class="k">def</span> <span class="nf">volume_by_interval</span><span class="p">(</span><span class="n">tweets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tweet</span><span class="p">],</span> <span class="n">intervals</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; This function takes a list of tweets and locates the newest and oldest</span>
+<span class="sd">    tweets in the bunch. It then breaks the length of time between these into</span>
+<span class="sd">    intervals and returns the average sentiment of tweets per interval.</span>
+
+<span class="sd">    What it returns is a dictionary that, when jsonified renders this React</span>
+<span class="sd">    component.</span>
+<span class="sd">        http://nivo.rocks/#/line</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">favorites_by_interval</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;Favorites&#39;</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">HSL1</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+    <span class="n">retweets_by_interval</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;Retweets&#39;</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">HSL2</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+    <span class="n">totals_by_interval</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;Totals&#39;</span><span class="p">,</span> <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">HSL3</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">[]}</span>
+    <span class="n">tweets</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">tweet</span><span class="p">:</span> <span class="n">tweet</span><span class="o">.</span><span class="n">time</span><span class="p">)</span>
+    <span class="n">interval_length</span> <span class="o">=</span> <span class="p">(</span><span class="n">tweets</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">time</span> <span class="o">-</span> <span class="n">tweets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">time</span><span class="p">)</span> <span class="o">/</span> <span class="n">intervals</span>
+    <span class="n">current_interval</span> <span class="o">=</span> <span class="n">tweets</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">time</span> <span class="o">+</span> <span class="n">interval_length</span>
+    <span class="n">current_favorites_tally</span> <span class="o">=</span> <span class="n">current_retweets_tally</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">tweet</span> <span class="ow">in</span> <span class="n">tweets</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">tweet</span><span class="o">.</span><span class="n">time</span> <span class="o">&gt;</span> <span class="n">current_interval</span><span class="p">:</span>
+            <span class="n">favorites_by_interval</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">HSL1</span><span class="p">,</span>
+                <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span>
+                    <span class="n">current_interval</span> <span class="o">-</span> <span class="p">(</span><span class="n">interval_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">current_favorites_tally</span><span class="p">})</span>
+            <span class="n">retweets_by_interval</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">HSL2</span><span class="p">,</span>
+                <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span>
+                    <span class="n">current_interval</span> <span class="o">-</span> <span class="p">(</span><span class="n">interval_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">current_retweets_tally</span><span class="p">})</span>
+            <span class="n">totals_by_interval</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+                <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">HSL3</span><span class="p">,</span>
+                <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span>
+                    <span class="n">current_interval</span> <span class="o">-</span> <span class="p">(</span><span class="n">interval_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%m/</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">current_favorites_tally</span> <span class="o">+</span> <span class="n">current_retweets_tally</span><span class="p">)})</span>
+            <span class="n">current_interval</span> <span class="o">+=</span> <span class="n">interval_length</span>
+            <span class="n">current_favorites_tally</span> <span class="o">=</span> <span class="n">current_retweets_tally</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">current_favorites_tally</span> <span class="o">+=</span> <span class="n">tweet</span><span class="o">.</span><span class="n">favorites</span>
+        <span class="n">current_retweets_tally</span> <span class="o">+=</span> <span class="n">tweet</span><span class="o">.</span><span class="n">retweets</span>
+    <span class="k">return</span> <span class="p">[</span>
+        <span class="n">favorites_by_interval</span><span class="p">,</span>
+        <span class="n">retweets_by_interval</span><span class="p">,</span>
+        <span class="n">totals_by_interval</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="all_ne_occurences"><a class="viewcode-back" href="../../../twitter_user_evaluation.tools.html#twitter_user_evaluation.tools.analytics.all_ne_occurences">[docs]</a><span class="k">def</span> <span class="nf">all_ne_occurences</span><span class="p">(</span><span class="n">tweets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tweet</span><span class="p">]):</span>
+    <span class="sd">&#39;&#39;&#39; Function takes a list of tweets and returns the hashtags that appear.</span>
+
+<span class="sd">    What it returns is a list of dictionaries that, when jsonified, renders as</span>
+<span class="sd">    this React comonent:</span>
+<span class="sd">        http://nivo.rocks/#/bar</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">word_occurences</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">tweet</span> <span class="ow">in</span> <span class="n">tweets</span><span class="p">:</span>
+        <span class="n">cleaned_text</span> <span class="o">=</span> <span class="n">parse_ne_chunk</span><span class="p">(</span><span class="n">tweet</span><span class="o">.</span><span class="n">cleaned_text</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">MODEL</span><span class="o">.</span><span class="n">polarity_scores</span><span class="p">(</span><span class="n">tweet</span><span class="o">.</span><span class="n">cleaned_text</span><span class="p">)[</span><span class="s1">&#39;compound&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">sent</span> <span class="o">=</span> <span class="s1">&#39;pos&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sent</span> <span class="o">=</span> <span class="s1">&#39;neg&#39;</span>
+        <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">cleaned_text</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">word_occurences</span><span class="p">:</span>
+                <span class="n">word_occurences</span><span class="p">[</span><span class="n">word</span><span class="p">][</span><span class="n">sent</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">word_occurences</span><span class="p">[</span><span class="n">word</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;pos&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s1">&#39;neg&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+                <span class="n">word_occurences</span><span class="p">[</span><span class="n">word</span><span class="p">][</span><span class="n">sent</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">([{</span>
+        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">word</span><span class="p">,</span>
+        <span class="s1">&#39;positive_occurences&#39;</span><span class="p">:</span> <span class="n">occurences</span><span class="p">[</span><span class="s1">&#39;pos&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;positive_occurencesColor&#39;</span><span class="p">:</span> <span class="n">HSL2</span><span class="p">,</span>
+        <span class="s1">&#39;negative_occurences&#39;</span><span class="p">:</span> <span class="n">occurences</span><span class="p">[</span><span class="s1">&#39;neg&#39;</span><span class="p">],</span>
+        <span class="s1">&#39;negative_occurencesColor&#39;</span><span class="p">:</span> <span class="n">HSL1</span><span class="p">,</span>
+        <span class="p">}</span> <span class="k">for</span> <span class="n">word</span><span class="p">,</span> <span class="n">occurences</span> <span class="ow">in</span> <span class="n">word_occurences</span><span class="o">.</span><span class="n">items</span><span class="p">()],</span>
+                  <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="o">-</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s1">&#39;positive_occurences&#39;</span><span class="p">]</span> <span class="o">+</span> \
+                                  <span class="n">x</span><span class="p">[</span><span class="s1">&#39;negative_occurences&#39;</span><span class="p">]))[:</span><span class="n">MAX_BAR_FIELDS</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="parse_ne_chunk"><a class="viewcode-back" href="../../../twitter_user_evaluation.tools.html#twitter_user_evaluation.tools.analytics.parse_ne_chunk">[docs]</a><span class="k">def</span> <span class="nf">parse_ne_chunk</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+    <span class="sd">&#39;&#39;&#39; Takes texts and finds the named entities</span>
+
+<span class="sd">    why write it when it&#39;s already there.</span>
+<span class="sd">    credit on so:</span>
+<span class="sd">        /questions/31836058/nltk-named-entity-recognition-to-a-python-list</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">chunked</span> <span class="o">=</span> <span class="n">ne_chunk</span><span class="p">(</span><span class="n">pos_tag</span><span class="p">(</span><span class="n">word_tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">)))</span>
+    <span class="n">continuous_chunk</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">current_chunk</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">chunked</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">Tree</span><span class="p">):</span>
+            <span class="n">current_chunk</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">token</span> <span class="k">for</span> <span class="n">token</span><span class="p">,</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">i</span><span class="o">.</span><span class="n">leaves</span><span class="p">()]))</span>
+        <span class="k">elif</span> <span class="n">current_chunk</span><span class="p">:</span>
+            <span class="n">named_entity</span> <span class="o">=</span> <span class="s2">&quot; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">current_chunk</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">named_entity</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">continuous_chunk</span><span class="p">:</span>
+                <span class="n">continuous_chunk</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">named_entity</span><span class="p">)</span>
+                <span class="n">current_chunk</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="n">continuous_chunk</span></div>
+
+
+<div class="viewcode-block" id="political_sentiment_scatter"><a class="viewcode-back" href="../../../twitter_user_evaluation.tools.html#twitter_user_evaluation.tools.analytics.political_sentiment_scatter">[docs]</a><span class="k">def</span> <span class="nf">political_sentiment_scatter</span><span class="p">(</span><span class="n">tweets</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tweet</span><span class="p">]):</span>
+    <span class="sd">&#39;&#39;&#39; Function takes a list of tweets and returns a bunch of data. It&#39;s the</span>
+<span class="sd">    sentiment, polarity and political sentiment of the tweets but organized in</span>
+<span class="sd">    a strange way so that when jsonified, it renders as this React component:</span>
+<span class="sd">        http://nivo.rocks/#/scatterplot/</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="n">sequences</span> <span class="o">=</span> <span class="n">POL_MODEL_TKNZR</span><span class="o">.</span><span class="n">texts_to_sequences</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">tweet</span><span class="o">.</span><span class="n">raw_text</span> <span class="k">for</span> <span class="n">tweet</span> <span class="ow">in</span> <span class="n">tweets</span><span class="p">])</span>
+    <span class="n">sequences</span> <span class="o">=</span> <span class="n">pad_sequences</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="n">maxlen</span><span class="o">=</span><span class="n">MAX_SEQUENCE_LENGTH</span><span class="p">)</span>
+    <span class="k">global</span> <span class="n">POL_MODEL</span>
+    <span class="n">preds</span> <span class="o">=</span> <span class="n">POL_MODEL</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">[{</span>
+        <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">tweet</span><span class="o">.</span><span class="n">raw_text</span><span class="p">,</span>
+        <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">[{</span>
+            <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="n">i</span><span class="p">,</span>
+            <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="n">popularity</span><span class="p">(</span><span class="n">tweet</span><span class="p">),</span>
+            <span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">pol_sent</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="p">}]}</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">tweet</span><span class="p">,</span> <span class="n">pol_sent</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">tweets</span><span class="p">,</span> <span class="n">preds</span><span class="p">))]</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2018, Bradley Laney.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.10</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
