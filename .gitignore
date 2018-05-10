@@ -17,7 +17,7 @@ texts.pickle
 labels.pickle
 venv
 raw_debate_texts
-
+Makefile
 
 # Distribution / packaging
 .Python
